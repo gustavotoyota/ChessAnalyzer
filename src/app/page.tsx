@@ -200,6 +200,7 @@ export default function Home() {
     targetSquare: Square,
     piece: string
   ) {
+    try {
     const move = game.current.move({
       from: sourceSquare,
       to: targetSquare,
@@ -214,6 +215,9 @@ export default function Home() {
     updateBoard();
 
     return true;
+    } catch {
+      return false;
+    }
   }
 
   return (
