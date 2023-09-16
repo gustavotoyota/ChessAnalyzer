@@ -1,113 +1,216 @@
-import Image from 'next/image'
+"use client";
+
+import { useEvent } from "@/hooks/use-event";
+import { Chess, Move, Square } from "chess.js";
+import { useEffect, useRef, useState } from "react";
+import { Chessboard } from "react-chessboard";
 
 export default function Home() {
+  const [pgn, setPgn] = useState("");
+
+  const game = useRef(new Chess());
+  const history = useRef<Move[]>([]);
+  const [fen, setFen] = useState(game.current.fen());
+  const moveIndex = useRef(0);
+
+  const stockfish = useRef<Worker>();
+
+  const arrowMap = new Map<string, string>();
+  const [arrows, setArrows] = useState<Square[][]>([]);
+
+  const [mate, setMate] = useState(false);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    stockfish.current = new Worker("stockfish-nnue-16.js");
+
+    stockfish.current.onmessage = (event) => {
+      console.log(event.data ? event.data : event);
+
+      if (event.data === "uciok") {
+        updateBoard();
+      }
+
+      if (event.data.startsWith("info depth")) {
+        const info = event.data.split(" ");
+
+        if (info[3] !== "seldepth") {
+          return;
+        }
+
+        const arrowId = info[info.indexOf("multipv") + 1];
+        const move = info[info.indexOf("pv") + 1];
+
+        if (arrowId === "1") {
+          const scoreIndex = info.indexOf("score");
+
+          setMate(info[scoreIndex + 1] === "mate");
+
+          let score = parseInt(info[scoreIndex + 2]);
+
+          if (game.current.turn() === "b") {
+            score = -score;
+          }
+
+          setScore(score);
+        }
+
+        arrowMap.set(arrowId, move);
+
+        const newArrows: Square[][] = [];
+
+        for (const move of Array.from(arrowMap.values())) {
+          newArrows.push([move.slice(0, 2) as any, move.slice(2, 4), "red"]);
+        }
+
+        setArrows(newArrows);
+      }
+    };
+
+    stockfish.current.postMessage("uci");
+    stockfish.current.postMessage("setoption name Threads value 12");
+    stockfish.current.postMessage("setoption name Hash value 128");
+    stockfish.current.postMessage("setoption name MultiPV value 3");
+  }, []);
+
+  useEvent("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      goBackward();
+    } else if (e.key === "ArrowRight") {
+      goForward();
+    }
+  });
+
+  function updateBoard() {
+    // Clear arrows
+    arrowMap.clear();
+    setArrows([]);
+
+    const moves = history.current
+      .slice(0, moveIndex.current)
+      .map((move) => move.lan)
+      .join(" ");
+
+    stockfish.current?.postMessage("stop");
+    stockfish.current?.postMessage(
+      "position startpos" + (moves !== "" ? ` moves ${moves}` : "")
+    );
+    stockfish.current?.postMessage("go depth 20");
+
+    setFen(game.current.fen());
+  }
+
+  function analyze() {
+    game.current.loadPgn(pgn);
+    history.current = game.current.history({ verbose: true });
+    game.current.reset();
+
+    stockfish.current?.postMessage("ucinewgame");
+    stockfish.current?.postMessage("isready");
+
+    moveIndex.current = 0;
+    updateBoard();
+  }
+
+  function goBackward() {
+    if (moveIndex.current <= 0) {
+      return;
+    }
+
+    moveIndex.current = Math.max(moveIndex.current - 1, 0);
+    console.log(`Undo: ${moveIndex.current}`);
+    game.current.undo();
+
+    updateBoard();
+  }
+
+  function goForward() {
+    if (moveIndex.current >= history.current.length) {
+      return;
+    }
+
+    console.log(`Redo: ${moveIndex.current}, Total: ${history.current.length}`);
+
+    game.current.move(history.current[moveIndex.current]);
+
+    moveIndex.current++;
+
+    updateBoard();
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="h-full flex items-center justify-center flex-col">
+      <div className="flex">
+        <div className="relative bg-neutral-600 w-6">
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-neutral-100"
+            style={{
+              height: mate
+                ? score > 0
+                  ? "100%"
+                  : "0%"
+                : `${
+                    50 + Math.min(Math.max(score / 100, -16), 16) * (50 / 16)
+                  }%`,
+            }}
+          ></div>
+
+          <div className="absolute left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 text-xs text-center  ">
+            {mate ? `M${Math.abs(score)}` : (score / 100).toFixed(1)}
+          </div>
+        </div>
+
+        <div className="w-4" />
+
+        <div className="w-[500px]">
+          <Chessboard
+            position={fen}
+            areArrowsAllowed={false}
+            arePiecesDraggable={false}
+            customArrows={arrows}
+          ></Chessboard>
         </div>
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+      <div className="h-8" />
+
+      <div className="flex">
+        <input
+          type="button"
+          value="<"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={goBackward}
+        />
+
+        <div className="w-4" />
+
+        <input
+          type="button"
+          value=">"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={goForward}
         />
       </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      <div className="h-8" />
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+      <div className="flex">
+        <textarea
+          className="w-80 h-20 border border-black resize-none"
+          placeholder="Paste PGN here"
+          value={pgn}
+          onChange={(e) => setPgn(e.target.value)}
+        />
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
+        <div className="w-4" />
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <input
+          type="button"
+          value="Analyze"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={analyze}
+        />
       </div>
     </main>
-  )
+  );
 }
