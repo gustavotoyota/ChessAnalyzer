@@ -103,12 +103,22 @@ export default function Home() {
   function analyze() {
     game.current.loadPgn(pgn);
     history.current = game.current.history({ verbose: true });
-    game.current.reset();
 
     stockfish.current?.postMessage("ucinewgame");
     stockfish.current?.postMessage("isready");
 
+    moveIndex.current = history.current.length;
+    updateBoard();
+  }
+
+  function goToBeginning() {
+    if (moveIndex.current <= 0) {
+      return;
+    }
+
     moveIndex.current = 0;
+    game.current.reset();
+
     updateBoard();
   }
 
@@ -118,7 +128,7 @@ export default function Home() {
     }
 
     moveIndex.current = Math.max(moveIndex.current - 1, 0);
-    console.log(`Undo: ${moveIndex.current}`);
+
     game.current.undo();
 
     updateBoard();
@@ -129,11 +139,19 @@ export default function Home() {
       return;
     }
 
-    console.log(`Redo: ${moveIndex.current}, Total: ${history.current.length}`);
+    game.current.move(history.current[moveIndex.current++]);
 
-    game.current.move(history.current[moveIndex.current]);
+    updateBoard();
+  }
 
-    moveIndex.current++;
+  function goToEnd() {
+    if (moveIndex.current >= history.current.length) {
+      return;
+    }
+
+    while (moveIndex.current < history.current.length) {
+      game.current.move(history.current[moveIndex.current++]);
+    }
 
     updateBoard();
   }
@@ -177,18 +195,36 @@ export default function Home() {
       <div className="flex">
         <input
           type="button"
-          value="<"
+          value="|<"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={goBackward}
+          onClick={goToBeginning}
         />
 
         <div className="w-4" />
 
         <input
           type="button"
+          value="<"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={goBackward}
+        />
+
+        <div className="w-2" />
+
+        <input
+          type="button"
           value=">"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           onClick={goForward}
+        />
+
+        <div className="w-4" />
+
+        <input
+          type="button"
+          value=">|"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={goToEnd}
         />
       </div>
 
