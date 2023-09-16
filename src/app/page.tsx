@@ -167,9 +167,7 @@ export default function Home() {
                 ? score > 0
                   ? "100%"
                   : "0%"
-                : `${
-                    50 + Math.min(Math.max(score / 100, -16), 16) * (50 / 16)
-                  }%`,
+                : `${50 + 50 * (2 / (1 + Math.exp(-0.00368208 * score)) - 1)}%`,
             }}
           ></div>
 
