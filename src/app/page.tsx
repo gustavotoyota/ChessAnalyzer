@@ -15,14 +15,41 @@ export default function Home() {
 
   const stockfish = useRef<Worker>();
 
-  const arrowMap = new Map<string, { move: string; score: string }>();
+  const [bestLines, setBestLines] = useState<
+    { moves: Move[]; scoreText: string; scoreValue: number }[]
+  >([]);
   const [arrows, setArrows] = useState<any[]>([]);
-
-  const [mate, setMate] = useState(false);
-  const [score, setScore] = useState(0);
 
   const numCustomMoves = useRef(0);
   const [customMoves, setCustomMoves] = useState<Move[]>([]);
+
+  function getMoveObjects(lans: string[]): Move[] {
+    const moves: Move[] = [];
+
+    try {
+      for (const lan of lans) {
+        moves.push(game.current.move(lan));
+      }
+    } catch {}
+
+    for (let i = 0; i < moves.length; ++i) {
+      game.current.undo();
+    }
+
+    if (moves.length === lans.length) {
+      return moves;
+    } else {
+      return lans.map(
+        (lan) =>
+          ({
+            from: lan.slice(0, 2) as Square,
+            to: lan.slice(2, 4) as Square,
+            lan,
+            san: "",
+          } as Move)
+      );
+    }
+  }
 
   useEffect(() => {
     stockfish.current = new Worker("stockfish-nnue-16.js");
@@ -41,45 +68,54 @@ export default function Home() {
           return;
         }
 
-        const arrowId = info[info.indexOf("multipv") + 1];
-        const move = info[info.indexOf("pv") + 1];
+        const lineId = info[info.indexOf("multipv") + 1];
 
-          const scoreIndex = info.indexOf("score");
+        const moves: string[] = [];
 
-          let score = parseInt(info[scoreIndex + 2]);
+        for (
+          let i = info.indexOf("pv") + 1;
+          i < info.length && moves.length < 15;
+          i++
+        ) {
+          moves.push(info[i]);
+        }
 
-          if (game.current.turn() === "b") {
-            score = -score;
-          }
+        const scoreIndex = info.indexOf("score");
+
+        let score = parseInt(info[scoreIndex + 2]);
+
+        if (game.current.turn() === "b") {
+          score = -score;
+        }
 
         const isMate = info[scoreIndex + 1] === "mate";
 
-        if (arrowId === "1") {
-          setMate(isMate);
-          setScore(score);
-        }
+        bestLines[lineId - 1] = {
+          moves: getMoveObjects(moves),
+          scoreText: isMate
+            ? `M${score}`
+            : `${score >= 0 ? "+" : ""}${(score / 100).toFixed(1)}`,
+          scoreValue: score,
+        };
 
-        arrowMap.set(arrowId, {
-          move,
-          score: isMate ? `M${score}` : (score / 100).toFixed(1),
-        });
+        setBestLines(bestLines);
 
         const newArrows: Square[][] = [];
         const moveSet = new Set<string>();
 
-        for (const arrow of Array.from(arrowMap.values())) {
-          if (moveSet.has(arrow.move)) {
+        for (const line of Array.from(bestLines.values())) {
+          if (moveSet.has(line.moves[0].lan)) {
             continue;
           }
 
           newArrows.push([
-            arrow.move.slice(0, 2) as any,
-            arrow.move.slice(2, 4),
+            line.moves[0].from as any,
+            line.moves[0].to,
             "red",
-            arrow.score,
+            line.scoreText,
           ]);
 
-          moveSet.add(arrow.move);
+          moveSet.add(line.moves[0].lan);
         }
 
         setArrows(newArrows);
@@ -102,7 +138,7 @@ export default function Home() {
 
   function updateBoard() {
     // Clear arrows
-    arrowMap.clear();
+    setBestLines([]);
     setArrows([]);
 
     const moves = history.current
@@ -161,8 +197,8 @@ export default function Home() {
     game.current.undo();
 
     if (params?.updateBoard !== false) {
-    updateBoard();
-  }
+      updateBoard();
+    }
   }
 
   function goForward(params?: { updateBoard?: boolean }) {
@@ -170,9 +206,9 @@ export default function Home() {
       if (numCustomMoves.current < customMoves.length) {
         numCustomMoves.current++;
         game.current.move(customMoves[numCustomMoves.current - 1]);
+        updateBoard();
       }
 
-      updateBoard();
       return;
     }
 
@@ -183,8 +219,8 @@ export default function Home() {
     game.current.move(history.current[moveIndex.current++]);
 
     if (params?.updateBoard !== false) {
-    updateBoard();
-  }
+      updateBoard();
+    }
   }
 
   function goToEnd() {
@@ -204,20 +240,20 @@ export default function Home() {
     piece: string
   ) {
     try {
-    const move = game.current.move({
-      from: sourceSquare,
-      to: targetSquare,
-    });
+      const move = game.current.move({
+        from: sourceSquare,
+        to: targetSquare,
+      });
 
-    if (move == null) {
-      return false;
-    }
+      if (move == null) {
+        return false;
+      }
 
-    numCustomMoves.current++;
-    customMoves.push(move);
-    updateBoard();
+      numCustomMoves.current++;
+      customMoves.push(move);
+      updateBoard();
 
-    return true;
+      return true;
     } catch {
       return false;
     }
@@ -226,91 +262,127 @@ export default function Home() {
   return (
     <main className="h-full flex items-center justify-center flex-col">
       <div className="flex">
-        <div className="relative bg-neutral-600 w-6">
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-neutral-100"
-            style={{
-              height: mate
-                ? score > 0
-                  ? "100%"
-                  : "0%"
-                : `${50 + 50 * (2 / (1 + Math.exp(-0.00368208 * score)) - 1)}%`,
-            }}
-          ></div>
+        <div className="flex items-center flex-col">
+          <div className="flex">
+            <div className="relative bg-neutral-600 w-7">
+              <div
+                className="absolute bottom-0 left-0 right-0 bg-neutral-100"
+                style={{
+                  height: bestLines[0]?.scoreText.startsWith("M")
+                    ? bestLines[0]!.scoreValue > 0
+                      ? "100%"
+                      : "0%"
+                    : `${
+                        50 +
+                        50 *
+                          (2 /
+                            (1 +
+                              Math.exp(
+                                -0.00368208 * (bestLines[0]?.scoreValue ?? 0)
+                              )) -
+                            1)
+                      }%`,
+                }}
+              ></div>
 
-          <div className="absolute left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 text-xs text-center  ">
-            {mate ? `M${Math.abs(score)}` : (score / 100).toFixed(1)}
+              <div className="absolute left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 text-xs text-center  ">
+                {bestLines[0]?.scoreText ?? "0.0"}
+              </div>
+            </div>
+
+            <div className="w-6" />
+
+            <div className="w-[500px]">
+              <Chessboard
+                position={fen}
+                areArrowsAllowed={false}
+                customArrows={arrows}
+                onPieceDrop={onPieceDrop}
+              ></Chessboard>
+            </div>
+          </div>
+
+          <div className="h-8" />
+
+          <div className="flex">
+            <input
+              type="button"
+              value="|<"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={goToBeginning}
+            />
+
+            <div className="w-4" />
+
+            <input
+              type="button"
+              value="<"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => goBackward()}
+            />
+
+            <div className="w-2" />
+
+            <input
+              type="button"
+              value=">"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => goForward()}
+            />
+
+            <div className="w-4" />
+
+            <input
+              type="button"
+              value=">|"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={goToEnd}
+            />
+          </div>
+
+          <div className="h-8" />
+
+          <div className="flex">
+            <textarea
+              className="w-80 h-20 border border-black resize-none"
+              placeholder="Paste PGN here"
+              value={pgn}
+              onChange={(e) => setPgn(e.target.value)}
+            />
+
+            <div className="w-4" />
+
+            <input
+              type="button"
+              value="Analyze"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={analyze}
+            />
           </div>
         </div>
 
-        <div className="w-4" />
+        <div className="w-8"></div>
 
-        <div className="w-[500px]">
-          <Chessboard
-            position={fen}
-            areArrowsAllowed={false}
-            customArrows={arrows}
-                onPieceDrop={onPieceDrop}
-          ></Chessboard>
+        <div className="w-96 bg-neutral-700 p-4 text-xs text-neutral-200">
+          {Array.from(bestLines.values()).map((line, i) => (
+            <div
+              key={i}
+              className="border-b border-neutral-400 py-1 overflow-hidden overflow-ellipsis whitespace-nowrap"
+            >
+              <span className="font-bold">{line.scoreText}</span>
+
+              <div className="inline-block w-2"></div>
+
+              {line.moves.map((move, i) => (
+                <span key={i}>
+                  <span>{move.san}</span>
+
+                  <div className="inline-block w-1"></div>
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
-      </div>
-
-      <div className="h-8" />
-
-      <div className="flex">
-        <input
-          type="button"
-          value="|<"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={goToBeginning}
-        />
-
-        <div className="w-4" />
-
-        <input
-          type="button"
-          value="<"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goBackward()}
-        />
-
-        <div className="w-2" />
-
-        <input
-          type="button"
-          value=">"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goForward()}
-        />
-
-        <div className="w-4" />
-
-        <input
-          type="button"
-          value=">|"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={goToEnd}
-        />
-      </div>
-
-      <div className="h-8" />
-
-      <div className="flex">
-        <textarea
-          className="w-80 h-20 border border-black resize-none"
-          placeholder="Paste PGN here"
-          value={pgn}
-          onChange={(e) => setPgn(e.target.value)}
-        />
-
-        <div className="w-4" />
-
-        <input
-          type="button"
-          value="Analyze"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={analyze}
-        />
       </div>
     </main>
   );
