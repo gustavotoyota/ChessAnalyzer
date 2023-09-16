@@ -4,6 +4,7 @@ import { useEvent } from "@/hooks/use-event";
 import { Chess, Move, Square } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
+import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 
 export default function Home() {
   const [pgn, setPgn] = useState("");
@@ -18,10 +19,14 @@ export default function Home() {
   const [bestLines, setBestLines] = useState<
     { moves: Move[]; scoreText: string; scoreValue: number }[]
   >([]);
-  const [arrows, setArrows] = useState<any[]>([]);
+  const [arrows, setArrows] = useState<Arrow[]>([]);
 
   const numCustomMoves = useRef(0);
   const [customMoves, setCustomMoves] = useState<Move[]>([]);
+
+  function smoothScore(score: number) {
+    return 2 / (1 + Math.exp(-0.00368208 * score)) - 1;
+  }
 
   function getMoveObjects(lans: string[]): Move[] {
     const moves: Move[] = [];
@@ -100,7 +105,7 @@ export default function Home() {
 
         setBestLines(bestLines);
 
-        const newArrows: Square[][] = [];
+        const newArrows: Arrow[] = [];
         const moveSet = new Set<string>();
 
         for (const line of Array.from(bestLines.values())) {
@@ -108,12 +113,17 @@ export default function Home() {
             continue;
           }
 
-          newArrows.push([
-            line.moves[0].from as any,
-            line.moves[0].to,
-            "red",
-            line.scoreText,
-          ]);
+          newArrows.push({
+            from: line.moves[0].from,
+            to: line.moves[0].to,
+
+            color: "red",
+
+            text: line.scoreText,
+            textColor: "#185bc9",
+            fontSize: "15",
+            fontWeight: "bold",
+          });
 
           moveSet.add(line.moves[0].lan);
         }
@@ -168,11 +178,17 @@ export default function Home() {
   }
 
   function goToBeginning() {
+    let executed = false;
+
     while (numCustomMoves.current > 0 || moveIndex.current > 0) {
       goBackward({ updateBoard: false });
+
+      executed = true;
     }
 
-    updateBoard();
+    if (executed) {
+      updateBoard();
+    }
   }
 
   function goBackward(params?: { updateBoard?: boolean }) {
@@ -224,14 +240,20 @@ export default function Home() {
   }
 
   function goToEnd() {
+    let executed = false;
+
     while (
       numCustomMoves.current < customMoves.length ||
       moveIndex.current < history.current.length
     ) {
       goForward({ updateBoard: false });
+
+      executed = true;
     }
 
-    updateBoard();
+    if (executed) {
+      updateBoard();
+    }
   }
 
   function onPieceDrop(
@@ -273,14 +295,7 @@ export default function Home() {
                       ? "100%"
                       : "0%"
                     : `${
-                        50 +
-                        50 *
-                          (2 /
-                            (1 +
-                              Math.exp(
-                                -0.00368208 * (bestLines[0]?.scoreValue ?? 0)
-                              )) -
-                            1)
+                        50 + 50 * smoothScore(bestLines[0]?.scoreValue ?? 0)
                       }%`,
                 }}
               ></div>
