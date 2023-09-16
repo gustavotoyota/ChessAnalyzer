@@ -132,7 +132,7 @@ export default function Home() {
   }
 
   function goToBeginning() {
-    while (moveIndex.current > 0) {
+    while (numCustomMoves.current > 0 || moveIndex.current > 0) {
       goBackward({ updateBoard: false });
     }
 
@@ -188,7 +188,10 @@ export default function Home() {
   }
 
   function goToEnd() {
-    while (moveIndex.current < history.current.length) {
+    while (
+      numCustomMoves.current < customMoves.length ||
+      moveIndex.current < history.current.length
+    ) {
       goForward({ updateBoard: false });
     }
 
