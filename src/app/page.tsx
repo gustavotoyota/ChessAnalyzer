@@ -21,6 +21,9 @@ export default function Home() {
   const [mate, setMate] = useState(false);
   const [score, setScore] = useState(0);
 
+  const numCustomMoves = useRef(0);
+  const [customMoves, setCustomMoves] = useState<Move[]>([]);
+
   useEffect(() => {
     stockfish.current = new Worker("stockfish-nnue-16.js");
 
@@ -104,6 +107,7 @@ export default function Home() {
 
     const moves = history.current
       .slice(0, moveIndex.current)
+      .concat(customMoves.slice(0, numCustomMoves.current))
       .map((move) => move.lan)
       .join(" ");
 
@@ -128,17 +132,26 @@ export default function Home() {
   }
 
   function goToBeginning() {
-    if (moveIndex.current <= 0) {
-      return;
+    while (moveIndex.current > 0) {
+      goBackward({ updateBoard: false });
     }
-
-    moveIndex.current = 0;
-    game.current.reset();
 
     updateBoard();
   }
 
-  function goBackward() {
+  function goBackward(params?: { updateBoard?: boolean }) {
+    if (numCustomMoves.current > 0) {
+      numCustomMoves.current--;
+
+      if (numCustomMoves.current <= 0 && history.current.length > 0) {
+        setCustomMoves([]);
+      }
+
+      game.current.undo();
+      updateBoard();
+      return;
+    }
+
     if (moveIndex.current <= 0) {
       return;
     }
@@ -147,29 +160,60 @@ export default function Home() {
 
     game.current.undo();
 
+    if (params?.updateBoard !== false) {
     updateBoard();
   }
+  }
 
-  function goForward() {
+  function goForward(params?: { updateBoard?: boolean }) {
+    if (customMoves.length > 0) {
+      if (numCustomMoves.current < customMoves.length) {
+        numCustomMoves.current++;
+        game.current.move(customMoves[numCustomMoves.current - 1]);
+      }
+
+      updateBoard();
+      return;
+    }
+
     if (moveIndex.current >= history.current.length) {
       return;
     }
 
     game.current.move(history.current[moveIndex.current++]);
 
+    if (params?.updateBoard !== false) {
     updateBoard();
+  }
   }
 
   function goToEnd() {
-    if (moveIndex.current >= history.current.length) {
-      return;
-    }
-
     while (moveIndex.current < history.current.length) {
-      game.current.move(history.current[moveIndex.current++]);
+      goForward({ updateBoard: false });
     }
 
     updateBoard();
+  }
+
+  function onPieceDrop(
+    sourceSquare: Square,
+    targetSquare: Square,
+    piece: string
+  ) {
+    const move = game.current.move({
+      from: sourceSquare,
+      to: targetSquare,
+    });
+
+    if (move == null) {
+      return false;
+    }
+
+    numCustomMoves.current++;
+    customMoves.push(move);
+    updateBoard();
+
+    return true;
   }
 
   return (
@@ -198,8 +242,8 @@ export default function Home() {
           <Chessboard
             position={fen}
             areArrowsAllowed={false}
-            arePiecesDraggable={false}
             customArrows={arrows}
+                onPieceDrop={onPieceDrop}
           ></Chessboard>
         </div>
       </div>
@@ -220,7 +264,7 @@ export default function Home() {
           type="button"
           value="<"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={goBackward}
+              onClick={() => goBackward()}
         />
 
         <div className="w-2" />
@@ -229,7 +273,7 @@ export default function Home() {
           type="button"
           value=">"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={goForward}
+              onClick={() => goForward()}
         />
 
         <div className="w-4" />
