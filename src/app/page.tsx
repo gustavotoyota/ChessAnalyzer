@@ -86,7 +86,7 @@ export default function Home() {
     stockfish.current.postMessage("uci");
     stockfish.current.postMessage("setoption name Threads value 12");
     stockfish.current.postMessage("setoption name Hash value 128");
-    stockfish.current.postMessage("setoption name MultiPV value 3");
+    stockfish.current.postMessage("setoption name MultiPV value 5");
   }, []);
 
   useEvent("keydown", (e) => {
