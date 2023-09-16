@@ -62,14 +62,21 @@ export default function Home() {
         });
 
         const newArrows: Square[][] = [];
+        const moveSet = new Set<string>();
 
         for (const arrow of Array.from(arrowMap.values())) {
+          if (moveSet.has(arrow.move)) {
+            continue;
+          }
+
           newArrows.push([
             arrow.move.slice(0, 2) as any,
             arrow.move.slice(2, 4),
             "red",
             arrow.score,
           ]);
+
+          moveSet.add(arrow.move);
         }
 
         setArrows(newArrows);
