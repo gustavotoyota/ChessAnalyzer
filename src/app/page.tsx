@@ -3,7 +3,7 @@
 import { useEvent } from "@/hooks/use-event";
 import { Chess, Move, Square } from "chess.js";
 import { useEffect, useRef, useState } from "react";
-import { Chessboard } from "react-chessboard";
+import { Chessboard } from "@gustavotoyota/react-chessboard";
 
 export default function Home() {
   const [pgn, setPgn] = useState("");
@@ -15,8 +15,8 @@ export default function Home() {
 
   const stockfish = useRef<Worker>();
 
-  const arrowMap = new Map<string, string>();
-  const [arrows, setArrows] = useState<Square[][]>([]);
+  const arrowMap = new Map<string, { move: string; score: string }>();
+  const [arrows, setArrows] = useState<any[]>([]);
 
   const [mate, setMate] = useState(false);
   const [score, setScore] = useState(0);
@@ -41,10 +41,7 @@ export default function Home() {
         const arrowId = info[info.indexOf("multipv") + 1];
         const move = info[info.indexOf("pv") + 1];
 
-        if (arrowId === "1") {
           const scoreIndex = info.indexOf("score");
-
-          setMate(info[scoreIndex + 1] === "mate");
 
           let score = parseInt(info[scoreIndex + 2]);
 
@@ -52,15 +49,27 @@ export default function Home() {
             score = -score;
           }
 
+        const isMate = info[scoreIndex + 1] === "mate";
+
+        if (arrowId === "1") {
+          setMate(isMate);
           setScore(score);
         }
 
-        arrowMap.set(arrowId, move);
+        arrowMap.set(arrowId, {
+          move,
+          score: isMate ? `M${score}` : (score / 100).toFixed(1),
+        });
 
         const newArrows: Square[][] = [];
 
-        for (const move of Array.from(arrowMap.values())) {
-          newArrows.push([move.slice(0, 2) as any, move.slice(2, 4), "red"]);
+        for (const arrow of Array.from(arrowMap.values())) {
+          newArrows.push([
+            arrow.move.slice(0, 2) as any,
+            arrow.move.slice(2, 4),
+            "red",
+            arrow.score,
+          ]);
         }
 
         setArrows(newArrows);
