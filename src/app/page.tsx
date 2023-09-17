@@ -158,11 +158,12 @@ export default function Home() {
             from: line.moves[0].from,
             to: line.moves[0].to,
 
-            color: "red",
+            color: "#003088",
             width: 16 - 2 * index,
+            opacity: 0.4 - 0.05 * index,
 
             text: line.scoreText,
-            textColor: "#185bc9",
+            textColor: "#b80000",
             fontSize: "15",
             fontWeight: "bold",
           });
