@@ -477,7 +477,7 @@ export default function Home() {
 
             <input
               type="button"
-              value="Flip"
+              value="Flip (F)"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => flipBoard()}
             />
