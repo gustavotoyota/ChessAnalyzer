@@ -49,6 +49,7 @@ export default function Home() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
     "white"
   );
+
   function getMoveObjects(lans: string[]): Move[] {
     const moves: Move[] = [];
 
