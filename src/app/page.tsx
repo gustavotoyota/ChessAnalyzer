@@ -34,6 +34,8 @@ export default function Home() {
   const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
     Map<number, ChessLine>
   >(new Map());
+
+  const [analysisEnabled, setAnalysisEnabled] = useState(true);
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
   const [numCustomMoves, setNumCustomMoves, numCustomMovesRef] =
@@ -200,6 +202,8 @@ export default function Home() {
       goForward();
     } else if (event.code === "KeyF") {
       flipBoard();
+    } else if (event.code === "KeyA") {
+      setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
     }
   });
 
@@ -398,17 +402,21 @@ export default function Home() {
       <div className="flex">
         <div className="flex items-center flex-col">
           <div className="flex">
-            <EvaluationBar
-              score={bestLines.get(0) ?? { mate: false, score: 0 }}
-            />
+            {analysisEnabled ? (
+              <>
+                <EvaluationBar
+                  score={bestLines.get(0) ?? { mate: false, score: 0 }}
+                />
 
-            <div className="w-6" />
+                <div className="w-6" />
+              </>
+            ) : null}
 
             <div className="w-[500px]">
               <Chessboard
                 position={fen}
                 areArrowsAllowed={false}
-                customArrows={arrows}
+                customArrows={analysisEnabled ? arrows : []}
                 onPieceDrop={(
                   sourceSquare: Square,
                   targetSquare: Square,
@@ -475,6 +483,19 @@ export default function Home() {
             />
           </div>
 
+          <div className="h-4" />
+
+          <div className="flex">
+            <input
+              type="button"
+              value="Toggle analysis (A)"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() =>
+                setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled)
+              }
+            />
+          </div>
+
           <div className="h-8" />
 
           <FenLoader
@@ -501,14 +522,18 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
-          <ChessLines
-            lines={bestLines}
-            onMovesSelected={(moves) => {
-              executeMoves(moves.map((move) => move.lan));
-            }}
-          />
+          {analysisEnabled ? (
+            <>
+              <ChessLines
+                lines={bestLines}
+                onMovesSelected={(moves) => {
+                  executeMoves(moves.map((move) => move.lan));
+                }}
+              />
 
-          <div className="h-4"></div>
+              <div className="h-4"></div>
+            </>
+          ) : null}
 
           <GameHistory
             moveIndex={moveIndex + numCustomMoves - 1}
