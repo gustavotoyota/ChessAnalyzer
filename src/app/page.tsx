@@ -196,6 +196,15 @@ export default function Home() {
   }, []);
 
   useEvent("keydown", (event) => {
+    if (
+      event.target instanceof HTMLElement &&
+      (event.target?.nodeName === "INPUT" ||
+        event.target?.nodeName === "TEXTAREA" ||
+        event.target?.isContentEditable)
+    ) {
+      return;
+    }
+
     if (event.ctrlKey && event.code === "ArrowLeft") {
       goToBeginning();
     } else if (event.ctrlKey && event.code === "ArrowRight") {
