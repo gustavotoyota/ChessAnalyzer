@@ -108,7 +108,7 @@ export default function Home() {
         const newArrows: Arrow[] = [];
         const moveSet = new Set<string>();
 
-        for (const line of Array.from(bestLines.values())) {
+        for (const [index, line] of Array.from(bestLines.entries())) {
           if (moveSet.has(line.moves[0].lan)) {
             continue;
           }
@@ -118,6 +118,7 @@ export default function Home() {
             to: line.moves[0].to,
 
             color: "red",
+            width: 16 - 2 * index,
 
             text: line.scoreText,
             textColor: "#185bc9",
