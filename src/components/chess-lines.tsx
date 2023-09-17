@@ -11,7 +11,7 @@ export default function ChessLines(props: { lines: Map<number, ChessLine> }) {
   return (
     <>
       {Array.from(props.lines.entries())
-        .toSorted((a, b) => a[0] - b[0])
+        .sort((a, b) => a[0] - b[0])
         .map(([_, line], i) => (
           <div
             key={i}
