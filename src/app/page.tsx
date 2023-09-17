@@ -480,6 +480,31 @@ export default function Home() {
               ? history.slice(0, moveIndex)
               : history
             ).concat(customMoves)}
+            onMoveSelected={(moveIndex) => {
+              let executed = false;
+
+              while (
+                moveIndex <
+                moveIndexRef.current + numCustomMovesRef.current - 1
+              ) {
+                goBackward({ updateBoard: false });
+
+                executed = true;
+              }
+
+              while (
+                moveIndex >
+                moveIndexRef.current + numCustomMovesRef.current - 1
+              ) {
+                goForward({ updateBoard: false });
+
+                executed = true;
+              }
+
+              if (executed) {
+                updateBoard();
+              }
+            }}
           />
         </div>
       </div>
