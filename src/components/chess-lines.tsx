@@ -13,9 +13,10 @@ export default function ChessLines(props: {
 }) {
   return (
     <>
-      {Array.from(props.lines.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([_, line], i) => (
+      {[0, 1, 2, 3, 4]
+        .map((i) => props.lines.get(i)!)
+        .filter((line) => line != null)
+        .map((line, i) => (
           <div
             key={i}
             className="border-b border-neutral-400 py-1 overflow-hidden overflow-ellipsis whitespace-nowrap"
