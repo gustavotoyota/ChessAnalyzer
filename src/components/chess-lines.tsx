@@ -1,11 +1,5 @@
+import { ChessLine, MoveScore } from "@/misc/types";
 import { Move } from "chess.js";
-
-export type ChessLine = {
-  moves: Move[];
-  mate: boolean;
-  score: number;
-  scoreText: string;
-};
 
 export default function ChessLines(props: {
   lines: Map<number, ChessLine>;

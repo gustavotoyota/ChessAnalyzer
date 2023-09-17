@@ -5,12 +5,13 @@ import { Chess, Move, Square } from "chess.js";
 import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
-import ChessLines, { ChessLine } from "@/components/chess-lines";
+import ChessLines from "@/components/chess-lines";
 import { getScoreText } from "@/misc/utils";
 import EvaluationBar from "@/components/evaluation-bar";
 import useStateWithRef from "@/hooks/use-ref-with-state";
 import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
+import { ChessLine, MoveScore } from "@/misc/types";
 
 export default function Home() {
   const game = useRef<Chess>() as MutableRefObject<Chess>;
@@ -27,7 +28,8 @@ export default function Home() {
     stockfish.current = new Worker("stockfish-nnue-16.js");
   }
 
-  const currentTurn = useRef<"w" | "b">("w");
+  const stockfishMoveIndex = useRef(0);
+  const stockfishTurn = useRef<"w" | "b">("w");
 
   const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
     Map<number, ChessLine>
@@ -38,6 +40,10 @@ export default function Home() {
     useStateWithRef(0);
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
     []
+  );
+
+  const [moveScores, setMoveScores] = useState<Map<number, MoveScore>>(
+    new Map()
   );
 
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
@@ -73,14 +79,13 @@ export default function Home() {
 
   useEffect(() => {
     stockfish.current.onmessage = (event) => {
-      console.log(event.data ? event.data : event);
-
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
 
         if (info[3] !== "seldepth") {
           if (info[4] === "mate") {
-            currentTurn.current = game.current.turn();
+            stockfishMoveIndex.current = moveIndexRef.current;
+            stockfishTurn.current = game.current.turn();
 
             setBestLines(new Map());
             setArrows([]);
@@ -93,7 +98,8 @@ export default function Home() {
         const lineId = info[info.indexOf("multipv") + 1];
 
         if (lineDepth === "1" && lineId === "1") {
-          currentTurn.current = game.current.turn();
+          stockfishMoveIndex.current = moveIndexRef.current;
+          stockfishTurn.current = game.current.turn();
 
           setBestLines(new Map());
           setArrows([]);
@@ -113,18 +119,33 @@ export default function Home() {
 
         let lineScore = parseInt(info[scoreIndex + 2]);
 
-        if (currentTurn.current === "b") {
+        if (stockfishTurn.current === "b") {
           lineScore = -lineScore;
         }
 
         const mate = info[scoreIndex + 1] === "mate";
 
+        const scoreText = getScoreText({ mate, score: lineScore });
+
         bestLinesRef.current.set(lineId - 1, {
           moves: getMoveObjects(lineMoves),
           mate: mate,
           score: lineScore,
-          scoreText: getScoreText({ mate, score: lineScore }),
+          scoreText: scoreText,
         });
+
+        if (lineId === "1") {
+          setMoveScores((oldMoveScores) => {
+            const newMoveScores = new Map(oldMoveScores);
+
+            newMoveScores.set(stockfishMoveIndex.current, {
+              mate: mate,
+              score: lineScore,
+            });
+
+            return newMoveScores;
+          });
+        }
 
         setBestLines(new Map(bestLinesRef.current));
 
@@ -373,14 +394,23 @@ export default function Home() {
     }
   }
 
+  async function computeChart() {
+    setMoveScores(new Map());
+
+    for (let i = 0; i < historyRef.current.length; ++i) {
+      goToMove(i);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
   return (
     <main className="h-full flex items-center justify-center flex-col">
       <div className="flex">
         <div className="flex items-center flex-col">
           <div className="flex">
             <EvaluationBar
-              mate={bestLines.get(0)?.mate ?? false}
-              score={bestLines.get(0)?.score ?? 0}
+              score={bestLines.get(0) ?? { mate: false, score: 0 }}
             />
 
             <div className="w-6" />
@@ -464,6 +494,15 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
+          <input
+            type="button"
+            value="Compute chart"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => computeChart()}
+          />
+
+          <div className="h-4"></div>
+
           <ChessLines
             lines={bestLines}
             onMovesSelected={(moves) => {
