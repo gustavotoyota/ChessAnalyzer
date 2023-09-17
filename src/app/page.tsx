@@ -353,12 +353,24 @@ export default function Home() {
     return numSuccessful === moves.length;
   }
 
-  function onPieceDrop(
-    sourceSquare: Square,
-    targetSquare: Square,
-    piece: string
-  ) {
-    return executeMove(sourceSquare + targetSquare);
+  function goToMove(moveIndex: number) {
+    let executed = false;
+
+    while (moveIndex < moveIndexRef.current + numCustomMovesRef.current - 1) {
+      goBackward({ updateBoard: false });
+
+      executed = true;
+    }
+
+    while (moveIndex > moveIndexRef.current + numCustomMovesRef.current - 1) {
+      goForward({ updateBoard: false });
+
+      executed = true;
+    }
+
+    if (executed) {
+      updateBoard();
+    }
   }
 
   return (
@@ -378,7 +390,11 @@ export default function Home() {
                 position={fen}
                 areArrowsAllowed={false}
                 customArrows={arrows}
-                onPieceDrop={onPieceDrop}
+                onPieceDrop={(
+                  sourceSquare: Square,
+                  targetSquare: Square,
+                  piece: string
+                ) => executeMove(sourceSquare + targetSquare)}
                 boardOrientation={boardOrientation}
               ></Chessboard>
             </div>
@@ -391,7 +407,7 @@ export default function Home() {
               type="button"
               value="Reset"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={resetBoard}
+              onClick={() => resetBoard()}
             />
 
             <div className="w-4" />
@@ -400,7 +416,7 @@ export default function Home() {
               type="button"
               value="|<"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={goToBeginning}
+              onClick={() => goToBeginning()}
             />
 
             <div className="w-4" />
@@ -427,7 +443,7 @@ export default function Home() {
               type="button"
               value=">|"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={goToEnd}
+              onClick={() => goToEnd()}
             />
 
             <div className="w-4" />
@@ -464,31 +480,7 @@ export default function Home() {
               ? history.slice(0, moveIndex)
               : history
             ).concat(customMoves)}
-            onMoveSelected={(moveIndex) => {
-              let executed = false;
-
-              while (
-                moveIndex <
-                moveIndexRef.current + numCustomMovesRef.current - 1
-              ) {
-                goBackward({ updateBoard: false });
-
-                executed = true;
-              }
-
-              while (
-                moveIndex >
-                moveIndexRef.current + numCustomMovesRef.current - 1
-              ) {
-                goForward({ updateBoard: false });
-
-                executed = true;
-              }
-
-              if (executed) {
-                updateBoard();
-              }
-            }}
+            onMoveSelected={(moveIndex) => goToMove(moveIndex)}
           />
         </div>
       </div>
