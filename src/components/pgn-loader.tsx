@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "./button";
 
 export default function PgnLoader(props: { onLoad: (pgn: string) => void }) {
   const [pgn, setPgn] = useState("");
@@ -14,12 +15,7 @@ export default function PgnLoader(props: { onLoad: (pgn: string) => void }) {
 
       <div className="w-4" />
 
-      <input
-        type="button"
-        value="Import PGN"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => props.onLoad(pgn)}
-      />
+      <Button value="Import PGN" onClick={() => props.onLoad(pgn)} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
 import { ChessLine, MoveScore } from "@/misc/types";
 import FenLoader from "@/components/fen-loader";
+import Button from "@/components/button";
 
 export default function Home() {
   const game = useRef<Chess>() as MutableRefObject<Chess>;
@@ -443,66 +444,34 @@ export default function Home() {
           <div className="h-8" />
 
           <div className="flex">
-            <input
-              type="button"
-              value="Reset (R)"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => resetBoard()}
-            />
+            <Button value="Reset (R)" onClick={() => resetBoard()} />
 
             <div className="w-4" />
 
-            <input
-              type="button"
-              value="|<"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goToBeginning()}
-            />
+            <Button value="|<" onClick={() => goToBeginning()} />
 
             <div className="w-4" />
 
-            <input
-              type="button"
-              value="<"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goBackward()}
-            />
+            <Button value="<" onClick={() => goBackward()} />
 
             <div className="w-2" />
 
-            <input
-              type="button"
-              value=">"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goForward()}
-            />
+            <Button value=">" onClick={() => goForward()} />
 
             <div className="w-4" />
 
-            <input
-              type="button"
-              value=">|"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => goToEnd()}
-            />
+            <Button value=">|" onClick={() => goToEnd()} />
 
             <div className="w-4" />
 
-            <input
-              type="button"
-              value="Flip (F)"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => flipBoard()}
-            />
+            <Button value="Flip (F)" onClick={() => flipBoard()} />
           </div>
 
           <div className="h-4" />
 
           <div className="flex">
-            <input
-              type="button"
+            <Button
               value="Toggle analysis (A)"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() =>
                 setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled)
               }
