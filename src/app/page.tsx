@@ -473,7 +473,13 @@ export default function Home() {
 
           <div className="h-8" />
 
-          <PgnLoader onLoad={(pgn) => analyze(pgn)} />
+          <PgnLoader
+            onLoad={(pgn) => {
+              game.current.loadPgn(pgn);
+
+              analyzeGame();
+            }}
+          />
         </div>
 
         <div className="w-8"></div>
