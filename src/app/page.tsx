@@ -199,9 +199,10 @@ export default function Home() {
   useEvent("keydown", (event) => {
     if (
       event.target instanceof HTMLElement &&
-      (event.target?.nodeName === "INPUT" ||
-        event.target?.nodeName === "TEXTAREA" ||
-        event.target?.isContentEditable)
+      ((event.target.nodeName === "INPUT" &&
+        event.target.getAttribute("type") === "text") ||
+        event.target.nodeName === "TEXTAREA" ||
+        event.target.isContentEditable)
     ) {
       return;
     }
