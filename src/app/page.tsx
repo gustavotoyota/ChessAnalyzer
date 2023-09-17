@@ -12,12 +12,15 @@ import useStateWithRef from "@/hooks/use-ref-with-state";
 import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
 import { ChessLine, MoveScore } from "@/misc/types";
+import FenLoader from "@/components/fen-loader";
 
 export default function Home() {
   const game = useRef<Chess>() as MutableRefObject<Chess>;
   if (game.current == null) {
     game.current = new Chess();
   }
+
+  const startingPoint = useRef("startpos");
 
   const [history, setHistory, historyRef] = useStateWithRef<Move[]>([]);
   const [fen, setFen] = useState(game.current.fen());
@@ -213,20 +216,20 @@ export default function Home() {
       .join(" ");
 
     stockfish.current?.postMessage("stop");
-    stockfish.current?.postMessage(
-      "position startpos" + (moves !== "" ? ` moves ${moves}` : "")
-    );
+    if (startingPoint.current === "startpos") {
+      stockfish.current?.postMessage(`position startpos moves ${moves}`);
+    } else {
+      stockfish.current?.postMessage(
+        `position fen ${startingPoint.current} moves ${moves}`
+      );
+    }
     stockfish.current?.postMessage("go depth 20");
 
     setFen(game.current.fen());
   }
 
-  function analyze(pgn: string) {
-    game.current.loadPgn(pgn);
+  function analyzeGame() {
     setHistory(game.current.history({ verbose: true }));
-
-    stockfish.current?.postMessage("ucinewgame");
-    stockfish.current?.postMessage("isready");
 
     setNumCustomMoves(0);
     setCustomMoves([]);
@@ -473,8 +476,20 @@ export default function Home() {
 
           <div className="h-8" />
 
+          <FenLoader
+            onLoad={(fen) => {
+              startingPoint.current = fen;
+              game.current.load(fen);
+
+              analyzeGame();
+            }}
+          />
+
+          <div className="h-6" />
+
           <PgnLoader
             onLoad={(pgn) => {
+              startingPoint.current = "startpos";
               game.current.loadPgn(pgn);
 
               analyzeGame();
