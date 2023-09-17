@@ -1,7 +1,37 @@
 import { Move } from "chess.js";
 
+function getMoveColor(params: {
+  activeMoveIndex: number;
+  renderMoveIndex: number;
+  numMoves: number;
+  numCustomMoves: number;
+}) {
+  if (params.renderMoveIndex > params.numMoves - 1) {
+    return "";
+  }
+
+  const isActive = params.activeMoveIndex === params.renderMoveIndex;
+  const isCustomMove =
+    params.renderMoveIndex >= params.numMoves - params.numCustomMoves;
+
+  if (isActive) {
+    if (isCustomMove) {
+      return "bg-sky-500/60";
+    } else {
+      return "bg-white/40";
+    }
+  } else {
+    if (isCustomMove) {
+      return "bg-sky-500/20";
+    } else {
+      return "";
+    }
+  }
+}
+
 export default function GameHistory(props: {
   moveIndex: number;
+  numCustomMoves: number;
   moves: Move[];
   onMoveSelected?: (moveIndex: number) => void;
 }) {
@@ -22,9 +52,14 @@ export default function GameHistory(props: {
             <div className="w-2"></div>
 
             <div
-              className={`w-12 font-bold rounded-sm cursor-pointer p-1 ${
-                props.moveIndex === i * 2 ? "bg-white/40" : ""
-              }`}
+              className={`w-12 font-bold rounded-sm cursor-pointer p-1 ${getMoveColor(
+                {
+                  activeMoveIndex: props.moveIndex,
+                  renderMoveIndex: i * 2,
+                  numMoves: props.moves.length,
+                  numCustomMoves: props.numCustomMoves,
+                }
+              )}`}
               onClick={() => props.onMoveSelected?.(i * 2)}
             >
               {whiteMove.san}
@@ -33,9 +68,14 @@ export default function GameHistory(props: {
             <div className="w-2"></div>
 
             <div
-              className={`w-12 font-bold rounded-sm cursor-pointer p-1 ${
-                props.moveIndex === i * 2 + 1 ? "bg-white/40" : ""
-              }`}
+              className={`w-12 font-bold rounded-sm cursor-pointer p-1 ${getMoveColor(
+                {
+                  activeMoveIndex: props.moveIndex,
+                  renderMoveIndex: i * 2 + 1,
+                  numMoves: props.moves.length,
+                  numCustomMoves: props.numCustomMoves,
+                }
+              )}`}
               onClick={() => props.onMoveSelected?.(i * 2 + 1)}
             >
               {blackMove?.san ?? ""}

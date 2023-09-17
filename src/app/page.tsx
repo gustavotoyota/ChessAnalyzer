@@ -476,6 +476,7 @@ export default function Home() {
 
           <GameHistory
             moveIndex={moveIndex + numCustomMoves - 1}
+            numCustomMoves={customMoves.length}
             moves={(customMoves.length > 0
               ? history.slice(0, moveIndex)
               : history
