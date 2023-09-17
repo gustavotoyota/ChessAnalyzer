@@ -9,6 +9,7 @@ import ChessLines, { ChessLine } from "@/components/chess-lines";
 import { getScoreText } from "@/misc/utils";
 import EvaluationBar from "@/components/evaluation-bar";
 import useStateWithRef from "@/hooks/use-ref-with-state";
+import GameHistory from "@/components/game-history";
 
 export default function Home() {
   const [pgn, setPgn] = useState("");
@@ -473,46 +474,13 @@ export default function Home() {
 
           <div className="h-4"></div>
 
-          <div className="flex-1 h-0 overflow-auto">
-            {(customMoves.length > 0 ? history.slice(0, moveIndex) : history)
-              .concat(customMoves)
-              .reduce((acc, value, index, array) => {
-                if (index % 2 === 0) {
-                  acc.push([value, array[index + 1]]);
-                }
-
-                return acc;
-              }, [] as [Move, Move][])
-              .map(([whiteMove, blackMove], i) => (
-                <div key={i} className="flex">
-                  <div className="w-6">{i + 1}.</div>
-
-                  <div className="w-2"></div>
-
-                  <div
-                    className={`w-12 font-bold rounded-sm p-1 ${
-                      moveIndex + numCustomMoves - 1 === i * 2
-                        ? "bg-white/40"
-                        : ""
-                    }`}
-                  >
-                    {whiteMove.san}
-                  </div>
-
-                  <div className="w-2"></div>
-
-                  <div
-                    className={`w-12 font-bold rounded-sm p-1 ${
-                      moveIndex + numCustomMoves - 1 === i * 2 + 1
-                        ? "bg-white/40"
-                        : ""
-                    }`}
-                  >
-                    {blackMove?.san ?? ""}
-                  </div>
-                </div>
-              ))}
-          </div>
+          <GameHistory
+            moveIndex={moveIndex + numCustomMoves - 1}
+            moves={(customMoves.length > 0
+              ? history.slice(0, moveIndex)
+              : history
+            ).concat(customMoves)}
+          />
         </div>
       </div>
     </main>
