@@ -8,6 +8,7 @@ import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import ChessLines, { ChessLine } from "@/components/chess-lines";
 import { getScoreText } from "@/misc/utils";
 import EvaluationBar from "@/components/evaluation-bar";
+import useStateWithRef from "@/hooks/use-ref-with-state";
 
 export default function Home() {
   const [pgn, setPgn] = useState("");
@@ -19,20 +20,19 @@ export default function Home() {
 
   const stockfish = useRef<Worker>();
 
-  const [bestLines, setBestLines] = useState<ChessLine[]>([]);
+  const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
+    Map<number, ChessLine>
+  >(new Map());
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
   const numCustomMoves = useRef(0);
-  const [customMoves, setCustomMoves] = useState<Move[]>([]);
+  const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
+    []
+  );
 
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
     "white"
   );
-
-  function smoothScore(score: number) {
-    return 2 / (1 + Math.exp(-0.00368208 * score)) - 1;
-  }
-
   function getMoveObjects(lans: string[]): Move[] {
     const moves: Move[] = [];
 
@@ -100,44 +100,42 @@ export default function Home() {
 
         const mate = info[scoreIndex + 1] === "mate";
 
-        setBestLines((oldBestLines) => {
-          const newBestLines = [...oldBestLines];
+        bestLinesRef.current.set(lineId - 1, {
+          moves: getMoveObjects(moves),
+          mate: mate,
+          score: score,
+          scoreText: getScoreText({ mate, score }),
+        });
 
-          newBestLines[lineId - 1] = {
-            moves: getMoveObjects(moves),
-            mate: mate,
-            score: score,
-            scoreText: getScoreText({ mate, score }),
-          };
+        setBestLines(new Map(bestLinesRef.current));
 
-          const newArrows: Arrow[] = [];
-          const moveSet = new Set<string>();
+        const newArrows: Arrow[] = [];
+        const moveSet = new Set<string>();
 
-          for (const [index, line] of Array.from(newBestLines.entries())) {
-            if (moveSet.has(line.moves[0].lan)) {
-              continue;
-            }
-
-            newArrows.push({
-              from: line.moves[0].from,
-              to: line.moves[0].to,
-
-              color: "red",
-              width: 16 - 2 * index,
-
-              text: line.scoreText,
-              textColor: "#185bc9",
-              fontSize: "15",
-              fontWeight: "bold",
-            });
-
-            moveSet.add(line.moves[0].lan);
+        for (const [index, line] of Array.from(
+          bestLinesRef.current.entries()
+        )) {
+          if (moveSet.has(line.moves[0].lan)) {
+            continue;
           }
 
-          setArrows(newArrows);
+          newArrows.push({
+            from: line.moves[0].from,
+            to: line.moves[0].to,
 
-          return newBestLines;
-        });
+            color: "red",
+            width: 16 - 2 * index,
+
+            text: line.scoreText,
+            textColor: "#185bc9",
+            fontSize: "15",
+            fontWeight: "bold",
+          });
+
+          moveSet.add(line.moves[0].lan);
+        }
+
+        setArrows(newArrows);
       }
     };
 
@@ -157,12 +155,12 @@ export default function Home() {
 
   function updateBoard() {
     // Clear arrows
-    setBestLines([]);
+    setBestLines(new Map());
     setArrows([]);
 
     const moves = history.current
       .slice(0, moveIndex.current)
-      .concat(customMoves.slice(0, numCustomMoves.current))
+      .concat(customMovesRef.current.slice(0, numCustomMoves.current))
       .map((move) => move.lan)
       .join(" ");
 
@@ -242,10 +240,10 @@ export default function Home() {
   }
 
   function goForward(params?: { updateBoard?: boolean }) {
-    if (customMoves.length > 0) {
-      if (numCustomMoves.current < customMoves.length) {
+    if (customMovesRef.current.length > 0) {
+      if (numCustomMoves.current < customMovesRef.current.length) {
         numCustomMoves.current++;
-        game.current.move(customMoves[numCustomMoves.current - 1]);
+        game.current.move(customMovesRef.current[numCustomMoves.current - 1]);
         updateBoard();
       }
 
@@ -267,7 +265,7 @@ export default function Home() {
     let executed = false;
 
     while (
-      numCustomMoves.current < customMoves.length ||
+      numCustomMoves.current < customMovesRef.current.length ||
       moveIndex.current < history.current.length
     ) {
       goForward({ updateBoard: false });
@@ -295,7 +293,11 @@ export default function Home() {
         return false;
       }
 
-      customMoves.splice(numCustomMoves.current++, customMoves.length, move);
+      setCustomMoves([
+        ...customMovesRef.current.slice(0, numCustomMoves.current++),
+        move,
+      ]);
+
       updateBoard();
 
       return true;
@@ -310,8 +312,8 @@ export default function Home() {
         <div className="flex items-center flex-col">
           <div className="flex">
             <EvaluationBar
-              mate={bestLines[0]?.mate ?? false}
-              score={bestLines[0]?.score ?? 0}
+              mate={bestLines.get(0)?.mate ?? false}
+              score={bestLines.get(0)?.score ?? 0}
             />
 
             <div className="w-6" />
