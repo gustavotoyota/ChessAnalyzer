@@ -1,9 +1,5 @@
 import { MoveScore } from "@/misc/types";
-import { getScoreText } from "@/misc/utils";
-
-function smoothScore(score: number) {
-  return 2 / (1 + Math.exp(-0.00368208 * score)) - 1;
-}
+import { getScoreText, getSmoothScore } from "@/misc/utils";
 
 export default function EvaluationBar(props: { score: MoveScore }) {
   return (
@@ -15,7 +11,7 @@ export default function EvaluationBar(props: { score: MoveScore }) {
             ? props.score.score > 0
               ? "100%"
               : "0%"
-            : `${50 + 50 * smoothScore(props.score.score)}%`,
+            : `${50 + 50 * getSmoothScore(props.score)}%`,
         }}
       ></div>
 
