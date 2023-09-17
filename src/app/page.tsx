@@ -389,16 +389,6 @@ export default function Home() {
     }
   }
 
-  async function computeChart() {
-    setMoveScores(new Map());
-
-    for (let i = 0; i < historyRef.current.length; ++i) {
-      goToMove(i);
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-
   return (
     <main className="h-full flex items-center justify-center flex-col">
       <div className="flex">
@@ -489,15 +479,6 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
-          <input
-            type="button"
-            value="Compute chart"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => computeChart()}
-          />
-
-          <div className="h-4"></div>
-
           <ChessLines
             lines={bestLines}
             onMovesSelected={(moves) => {
