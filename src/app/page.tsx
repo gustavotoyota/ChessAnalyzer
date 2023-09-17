@@ -78,6 +78,13 @@ export default function Home() {
         const info = event.data.split(" ");
 
         if (info[3] !== "seldepth") {
+          if (info[4] === "mate") {
+            currentTurn.current = game.current.turn();
+
+            setBestLines(new Map());
+            setArrows([]);
+          }
+
           return;
         }
 
