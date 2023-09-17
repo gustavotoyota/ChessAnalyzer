@@ -24,6 +24,10 @@ export default function Home() {
   const numCustomMoves = useRef(0);
   const [customMoves, setCustomMoves] = useState<Move[]>([]);
 
+  const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
+    "white"
+  );
+
   function smoothScore(score: number) {
     return 2 / (1 + Math.exp(-0.00368208 * score)) - 1;
   }
@@ -313,6 +317,7 @@ export default function Home() {
                 areArrowsAllowed={false}
                 customArrows={arrows}
                 onPieceDrop={onPieceDrop}
+                boardOrientation={boardOrientation}
               ></Chessboard>
             </div>
           </div>
@@ -352,6 +357,19 @@ export default function Home() {
               value=">|"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={goToEnd}
+            />
+
+            <div className="w-4" />
+
+            <input
+              type="button"
+              value="Flip"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() =>
+                setBoardOrientation(
+                  boardOrientation === "white" ? "black" : "white"
+                )
+              }
             />
           </div>
 
