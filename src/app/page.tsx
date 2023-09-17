@@ -24,9 +24,6 @@ export default function Home() {
   const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(0);
 
   const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
-  if (stockfish.current == null) {
-    stockfish.current = new Worker("stockfish-nnue-16.js");
-  }
 
   const stockfishMoveIndex = useRef(0);
   const stockfishTurn = useRef<"w" | "b">("w");
@@ -78,6 +75,8 @@ export default function Home() {
   }
 
   useEffect(() => {
+    stockfish.current = new Worker("stockfish-nnue-16.js");
+
     stockfish.current.onmessage = (event) => {
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
