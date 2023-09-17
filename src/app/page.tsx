@@ -82,27 +82,22 @@ export default function Home() {
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
 
-        if (info[3] !== "seldepth") {
-          if (info[4] === "mate") {
-            stockfishMoveIndex.current = moveIndexRef.current;
-            stockfishTurn.current = game.current.turn();
-
-            setBestLines(new Map());
-            setArrows([]);
-          }
-
-          return;
-        }
-
         const lineDepth = info[2];
         const lineId = info[info.indexOf("multipv") + 1];
 
-        if (lineDepth === "1" && lineId === "1") {
+        if (
+          (info[3] === "seldepth" && lineDepth === "1" && lineId === "1") ||
+          info[4] === "mate"
+        ) {
           stockfishMoveIndex.current = moveIndexRef.current;
           stockfishTurn.current = game.current.turn();
 
           setBestLines(new Map());
           setArrows([]);
+        }
+
+        if (info[3] !== "seldepth") {
+          return;
         }
 
         const lineMoves: string[] = [];
