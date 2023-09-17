@@ -10,10 +10,9 @@ import { getScoreText } from "@/misc/utils";
 import EvaluationBar from "@/components/evaluation-bar";
 import useStateWithRef from "@/hooks/use-ref-with-state";
 import GameHistory from "@/components/game-history";
+import PgnLoader from "@/components/pgn-loader";
 
 export default function Home() {
-  const [pgn, setPgn] = useState("");
-
   const game = useRef<Chess>() as MutableRefObject<Chess>;
   if (game.current == null) {
     game.current = new Chess();
@@ -206,7 +205,7 @@ export default function Home() {
     setFen(game.current.fen());
   }
 
-  function analyze() {
+  function analyze(pgn: string) {
     game.current.loadPgn(pgn);
     setHistory(game.current.history({ verbose: true }));
 
@@ -443,23 +442,7 @@ export default function Home() {
 
           <div className="h-8" />
 
-          <div className="flex">
-            <textarea
-              className="w-80 h-20 border border-black resize-none"
-              placeholder="Paste PGN here"
-              value={pgn}
-              onChange={(e) => setPgn(e.target.value)}
-            />
-
-            <div className="w-4" />
-
-            <input
-              type="button"
-              value="Analyze"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={analyze}
-            />
-          </div>
+          <PgnLoader onLoad={(pgn) => analyze(pgn)} />
         </div>
 
         <div className="w-8"></div>
