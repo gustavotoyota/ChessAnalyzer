@@ -185,6 +185,18 @@ export default function Home() {
     updateBoard();
   }
 
+  function resetBoard() {
+    game.current.reset();
+
+    history.current = [];
+
+    numCustomMoves.current = 0;
+    setCustomMoves([]);
+
+    moveIndex.current = 0;
+    updateBoard();
+  }
+
   function goToBeginning() {
     let executed = false;
 
@@ -314,6 +326,15 @@ export default function Home() {
           <div className="h-8" />
 
           <div className="flex">
+            <input
+              type="button"
+              value="Reset"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={resetBoard}
+            />
+
+            <div className="w-4" />
+
             <input
               type="button"
               value="|<"
