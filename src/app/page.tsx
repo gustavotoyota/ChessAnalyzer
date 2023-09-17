@@ -18,9 +18,9 @@ export default function Home() {
     game.current = new Chess();
   }
 
-  const history = useRef<Move[]>([]);
+  const [history, setHistory, historyRef] = useStateWithRef<Move[]>([]);
   const [fen, setFen] = useState(game.current.fen());
-  const moveIndex = useRef(0);
+  const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(0);
 
   const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
   if (stockfish.current == null) {
@@ -34,7 +34,8 @@ export default function Home() {
   >(new Map());
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
-  const numCustomMoves = useRef(0);
+  const [numCustomMoves, setNumCustomMoves, numCustomMovesRef] =
+    useStateWithRef(0);
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
     []
   );
@@ -189,9 +190,9 @@ export default function Home() {
   }
 
   function updateBoard() {
-    const moves = history.current
-      .slice(0, moveIndex.current)
-      .concat(customMovesRef.current.slice(0, numCustomMoves.current))
+    const moves = historyRef.current
+      .slice(0, moveIndexRef.current)
+      .concat(customMovesRef.current.slice(0, numCustomMovesRef.current))
       .map((move) => move.lan)
       .join(" ");
 
@@ -206,34 +207,36 @@ export default function Home() {
 
   function analyze() {
     game.current.loadPgn(pgn);
-    history.current = game.current.history({ verbose: true });
+    setHistory(game.current.history({ verbose: true }));
 
     stockfish.current?.postMessage("ucinewgame");
     stockfish.current?.postMessage("isready");
 
-    numCustomMoves.current = 0;
+    setNumCustomMoves(0);
     setCustomMoves([]);
 
-    moveIndex.current = history.current.length;
+    setMoveIndex(historyRef.current.length);
+
     updateBoard();
   }
 
   function resetBoard() {
     game.current.reset();
 
-    history.current = [];
+    setHistory([]);
 
-    numCustomMoves.current = 0;
+    setNumCustomMoves(0);
     setCustomMoves([]);
 
-    moveIndex.current = 0;
+    setMoveIndex(0);
+
     updateBoard();
   }
 
   function goToBeginning() {
     let executed = false;
 
-    while (numCustomMoves.current > 0 || moveIndex.current > 0) {
+    while (numCustomMovesRef.current > 0 || moveIndexRef.current > 0) {
       goBackward({ updateBoard: false });
 
       executed = true;
@@ -245,10 +248,10 @@ export default function Home() {
   }
 
   function goBackward(params?: { updateBoard?: boolean }) {
-    if (numCustomMoves.current > 0) {
-      numCustomMoves.current--;
+    if (numCustomMovesRef.current > 0) {
+      setNumCustomMoves(numCustomMovesRef.current - 1);
 
-      if (numCustomMoves.current <= 0 && history.current.length > 0) {
+      if (numCustomMovesRef.current <= 0 && historyRef.current.length > 0) {
         setCustomMoves([]);
       }
 
@@ -257,11 +260,11 @@ export default function Home() {
       return;
     }
 
-    if (moveIndex.current <= 0) {
+    if (moveIndexRef.current <= 0) {
       return;
     }
 
-    moveIndex.current = Math.max(moveIndex.current - 1, 0);
+    setMoveIndex(Math.max(moveIndexRef.current - 1, 0));
 
     game.current.undo();
 
@@ -272,20 +275,23 @@ export default function Home() {
 
   function goForward(params?: { updateBoard?: boolean }) {
     if (customMovesRef.current.length > 0) {
-      if (numCustomMoves.current < customMovesRef.current.length) {
-        numCustomMoves.current++;
-        game.current.move(customMovesRef.current[numCustomMoves.current - 1]);
+      if (numCustomMovesRef.current < customMovesRef.current.length) {
+        game.current.move(customMovesRef.current[numCustomMovesRef.current]);
+
+        setNumCustomMoves(numCustomMovesRef.current + 1);
+
         updateBoard();
       }
 
       return;
     }
 
-    if (moveIndex.current >= history.current.length) {
+    if (moveIndexRef.current >= historyRef.current.length) {
       return;
     }
 
-    game.current.move(history.current[moveIndex.current++]);
+    game.current.move(historyRef.current[moveIndexRef.current]);
+    setMoveIndex(moveIndexRef.current + 1);
 
     if (params?.updateBoard !== false) {
       updateBoard();
@@ -296,8 +302,8 @@ export default function Home() {
     let executed = false;
 
     while (
-      numCustomMoves.current < customMovesRef.current.length ||
-      moveIndex.current < history.current.length
+      numCustomMovesRef.current < customMovesRef.current.length ||
+      moveIndexRef.current < historyRef.current.length
     ) {
       goForward({ updateBoard: false });
 
@@ -314,9 +320,10 @@ export default function Home() {
       const moveObject = game.current.move(moveStr);
 
       setCustomMoves([
-        ...customMovesRef.current.slice(0, numCustomMoves.current++),
+        ...customMovesRef.current.slice(0, numCustomMovesRef.current),
         moveObject,
       ]);
+      setNumCustomMoves(numCustomMovesRef.current + 1);
 
       updateBoard();
 
@@ -456,13 +463,56 @@ export default function Home() {
 
         <div className="w-8"></div>
 
-        <div className="w-96 bg-neutral-700 p-4 text-xs text-neutral-200">
+        <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
           <ChessLines
             lines={bestLines}
             onMovesSelected={(moves) => {
               executeMoves(moves.map((move) => move.lan));
             }}
           />
+
+          <div className="h-4"></div>
+
+          <div className="flex-1 h-0 overflow-auto">
+            {(customMoves.length > 0 ? history.slice(0, moveIndex) : history)
+              .concat(customMoves)
+              .reduce((acc, value, index, array) => {
+                if (index % 2 === 0) {
+                  acc.push([value, array[index + 1]]);
+                }
+
+                return acc;
+              }, [] as [Move, Move][])
+              .map(([whiteMove, blackMove], i) => (
+                <div key={i} className="flex">
+                  <div className="w-6">{i + 1}.</div>
+
+                  <div className="w-2"></div>
+
+                  <div
+                    className={`w-12 font-bold rounded-sm p-1 ${
+                      moveIndex + numCustomMoves - 1 === i * 2
+                        ? "bg-white/40"
+                        : ""
+                    }`}
+                  >
+                    {whiteMove.san}
+                  </div>
+
+                  <div className="w-2"></div>
+
+                  <div
+                    className={`w-12 font-bold rounded-sm p-1 ${
+                      moveIndex + numCustomMoves - 1 === i * 2 + 1
+                        ? "bg-white/40"
+                        : ""
+                    }`}
+                  >
+                    {blackMove?.san ?? ""}
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </main>
