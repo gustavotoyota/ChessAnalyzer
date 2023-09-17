@@ -13,7 +13,9 @@ import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
 import { ChessLine, MoveScore } from "@/misc/types";
 import FenLoader from "@/components/fen-loader";
+import Dialog from "@/components/dialog";
 import Button from "@/components/button";
+import PlayVsComputerDialog from "@/components/play-vs-computer-dialog";
 
 export default function Home() {
   const game = useRef<Chess>() as MutableRefObject<Chess>;
@@ -52,6 +54,9 @@ export default function Home() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
     "white"
   );
+
+  const [playVsComputerDialogOpen, setPlayVsComputerDialogOpen] =
+    useState(false);
 
   function getMoveObjects(lans: string[]): Move[] {
     const moves: Move[] = [];
@@ -472,6 +477,21 @@ export default function Home() {
 
           <div className="flex">
             <Button
+              value="Play vs. computer"
+              onClick={() =>
+                setPlayVsComputerDialogOpen((oldPlayVsComputerDialogOpen) => {
+                  if (oldPlayVsComputerDialogOpen) {
+                    return false;
+                  } else {
+                    return true;
+                  }
+                })
+              }
+            />
+
+            <div className="w-4" />
+
+            <Button
               value="Toggle analysis (A)"
               onClick={() =>
                 setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled)
@@ -505,7 +525,7 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
-          {analysisEnabled ? (
+          {analysisEnabled && (
             <>
               <ChessLines
                 lines={bestLines}
@@ -516,7 +536,7 @@ export default function Home() {
 
               <div className="h-4"></div>
             </>
-          ) : null}
+          )}
 
           <GameHistory
             moveIndex={moveIndex + numCustomMoves - 1}
@@ -529,6 +549,12 @@ export default function Home() {
           />
         </div>
       </div>
+
+      {playVsComputerDialogOpen && (
+        <PlayVsComputerDialog
+          onClose={() => setPlayVsComputerDialogOpen(false)}
+        />
+      )}
     </main>
   );
 }
