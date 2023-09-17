@@ -20,6 +20,8 @@ export default function Home() {
 
   const stockfish = useRef<Worker>();
 
+  const currentTurn = useRef<"w" | "b">("w");
+
   const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
     Map<number, ChessLine>
   >(new Map());
@@ -69,6 +71,7 @@ export default function Home() {
 
       if (event.data === "uciok") {
         updateBoard();
+        return;
       }
 
       if (event.data.startsWith("info depth")) {
@@ -78,33 +81,41 @@ export default function Home() {
           return;
         }
 
+        const lineDepth = info[2];
         const lineId = info[info.indexOf("multipv") + 1];
 
-        const moves: string[] = [];
+        if (lineDepth === "1" && lineId === "1") {
+          currentTurn.current = game.current.turn();
+
+          setBestLines(new Map());
+          setArrows([]);
+        }
+
+        const lineMoves: string[] = [];
 
         for (
           let i = info.indexOf("pv") + 1;
-          i < info.length && moves.length < 15;
+          i < info.length && lineMoves.length < 15;
           i++
         ) {
-          moves.push(info[i]);
+          lineMoves.push(info[i]);
         }
 
         const scoreIndex = info.indexOf("score");
 
-        let score = parseInt(info[scoreIndex + 2]) / 100;
+        let lineScore = parseInt(info[scoreIndex + 2]) / 100;
 
-        if (game.current.turn() === "b") {
-          score = -score;
+        if (currentTurn.current === "b") {
+          lineScore = -lineScore;
         }
 
         const mate = info[scoreIndex + 1] === "mate";
 
         bestLinesRef.current.set(lineId - 1, {
-          moves: getMoveObjects(moves),
+          moves: getMoveObjects(lineMoves),
           mate: mate,
-          score: score,
-          scoreText: getScoreText({ mate, score }),
+          score: lineScore,
+          scoreText: getScoreText({ mate, score: lineScore }),
         });
 
         setBestLines(new Map(bestLinesRef.current));
@@ -162,10 +173,6 @@ export default function Home() {
   }
 
   function updateBoard() {
-    // Clear arrows
-    setBestLines(new Map());
-    setArrows([]);
-
     const moves = history.current
       .slice(0, moveIndex.current)
       .concat(customMovesRef.current.slice(0, numCustomMoves.current))
