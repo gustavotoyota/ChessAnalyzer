@@ -21,7 +21,7 @@ export default function ChessLines(props: {
             className="border-b border-neutral-400 py-1 overflow-hidden overflow-ellipsis whitespace-nowrap"
           >
             <span
-              className="font-bold cursor-pointer select-none"
+              className="font-bold cursor-pointer"
               onClick={() => props.onMovesSelected?.(line.moves.slice(0, 1))}
             >
               {line.scoreText}
@@ -32,7 +32,7 @@ export default function ChessLines(props: {
             {line.moves.map((move, i) => (
               <span key={i}>
                 <span
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer"
                   onClick={() =>
                     props.onMovesSelected?.(line.moves.slice(0, i + 1))
                   }
