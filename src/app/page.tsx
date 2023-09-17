@@ -5,6 +5,9 @@ import { Chess, Move, Square } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
+import ChessLines, { ChessLine } from "@/components/chess-lines";
+import { getScoreText } from "@/misc/utils";
+import EvaluationBar from "@/components/evaluation-bar";
 
 export default function Home() {
   const [pgn, setPgn] = useState("");
@@ -16,9 +19,7 @@ export default function Home() {
 
   const stockfish = useRef<Worker>();
 
-  const [bestLines, setBestLines] = useState<
-    { moves: Move[]; scoreText: string; scoreValue: number }[]
-  >([]);
+  const [bestLines, setBestLines] = useState<ChessLine[]>([]);
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
   const numCustomMoves = useRef(0);
@@ -91,20 +92,19 @@ export default function Home() {
 
         const scoreIndex = info.indexOf("score");
 
-        let score = parseInt(info[scoreIndex + 2]);
+        let score = parseInt(info[scoreIndex + 2]) / 100;
 
         if (game.current.turn() === "b") {
           score = -score;
         }
 
-        const isMate = info[scoreIndex + 1] === "mate";
+        const mate = info[scoreIndex + 1] === "mate";
 
         bestLines[lineId - 1] = {
           moves: getMoveObjects(moves),
-          scoreText: isMate
-            ? `M${score}`
-            : `${score >= 0 ? "+" : ""}${(score / 100).toFixed(1)}`,
-          scoreValue: score,
+          mate: mate,
+          score: score,
+          scoreText: getScoreText({ mate, score }),
         };
 
         setBestLines(bestLines);
@@ -293,24 +293,10 @@ export default function Home() {
       <div className="flex">
         <div className="flex items-center flex-col">
           <div className="flex">
-            <div className="relative bg-neutral-600 w-7">
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-neutral-100"
-                style={{
-                  height: bestLines[0]?.scoreText.startsWith("M")
-                    ? bestLines[0]!.scoreValue > 0
-                      ? "100%"
-                      : "0%"
-                    : `${
-                        50 + 50 * smoothScore(bestLines[0]?.scoreValue ?? 0)
-                      }%`,
-                }}
-              ></div>
-
-              <div className="absolute left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 text-xs text-center  ">
-                {bestLines[0]?.scoreText ?? "0.0"}
-              </div>
-            </div>
+            <EvaluationBar
+              mate={bestLines[0]?.mate ?? false}
+              score={bestLines[0]?.score ?? 0}
+            />
 
             <div className="w-6" />
 
@@ -400,24 +386,7 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 bg-neutral-700 p-4 text-xs text-neutral-200">
-          {Array.from(bestLines.values()).map((line, i) => (
-            <div
-              key={i}
-              className="border-b border-neutral-400 py-1 overflow-hidden overflow-ellipsis whitespace-nowrap"
-            >
-              <span className="font-bold">{line.scoreText}</span>
-
-              <div className="inline-block w-2"></div>
-
-              {line.moves.map((move, i) => (
-                <span key={i}>
-                  <span>{move.san}</span>
-
-                  <div className="inline-block w-1"></div>
-                </span>
-              ))}
-            </div>
-          ))}
+          <ChessLines lines={bestLines} />
         </div>
       </div>
     </main>
