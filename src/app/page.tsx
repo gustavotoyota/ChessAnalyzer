@@ -145,13 +145,21 @@ export default function Home() {
     stockfish.current.postMessage("setoption name MultiPV value 5");
   }, []);
 
-  useEvent("keydown", (e) => {
-    if (e.key === "ArrowLeft") {
+  useEvent("keydown", (event) => {
+    if (event.code === "ArrowLeft") {
       goBackward();
-    } else if (e.key === "ArrowRight") {
+    } else if (event.code === "ArrowRight") {
       goForward();
+    } else if (event.code === "KeyF") {
+      flipBoard();
     }
   });
+
+  function flipBoard() {
+    setBoardOrientation((oldBoardOrientation) =>
+      oldBoardOrientation === "white" ? "black" : "white"
+    );
+  }
 
   function updateBoard() {
     // Clear arrows
@@ -381,11 +389,7 @@ export default function Home() {
               type="button"
               value="Flip"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() =>
-                setBoardOrientation(
-                  boardOrientation === "white" ? "black" : "white"
-                )
-              }
+              onClick={() => flipBoard()}
             />
           </div>
 
