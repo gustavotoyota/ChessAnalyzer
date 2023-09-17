@@ -178,6 +178,9 @@ export default function Home() {
     stockfish.current?.postMessage("ucinewgame");
     stockfish.current?.postMessage("isready");
 
+    numCustomMoves.current = 0;
+    setCustomMoves([]);
+
     moveIndex.current = history.current.length;
     updateBoard();
   }
