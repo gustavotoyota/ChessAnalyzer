@@ -271,8 +271,7 @@ export default function Home() {
         return false;
       }
 
-      numCustomMoves.current++;
-      customMoves.push(move);
+      customMoves.splice(numCustomMoves.current++, customMoves.length, move);
       updateBoard();
 
       return true;
