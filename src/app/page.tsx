@@ -74,11 +74,6 @@ export default function Home() {
     stockfish.current.onmessage = (event) => {
       console.log(event.data ? event.data : event);
 
-      if (event.data === "uciok") {
-        updateBoard();
-        return;
-      }
-
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
 
@@ -153,14 +148,21 @@ export default function Home() {
 
         setArrows(newArrows);
       }
+
+      if (event.data === "uciok") {
+        stockfish.current.postMessage(
+          `setoption name Threads value ${navigator.hardwareConcurrency}`
+        );
+        stockfish.current.postMessage("setoption name Hash value 128");
+        stockfish.current.postMessage("setoption name MultiPV value 5");
+
+        updateBoard();
+
+        return;
+      }
     };
 
     stockfish.current.postMessage("uci");
-    stockfish.current.postMessage(
-      `setoption name Threads value ${navigator.hardwareConcurrency}`
-    );
-    stockfish.current.postMessage("setoption name Hash value 128");
-    stockfish.current.postMessage("setoption name MultiPV value 5");
   }, []);
 
   useEvent("keydown", (event) => {
