@@ -196,7 +196,11 @@ export default function Home() {
   }, []);
 
   useEvent("keydown", (event) => {
-    if (event.code === "ArrowLeft") {
+    if (event.ctrlKey && event.code === "ArrowLeft") {
+      goToBeginning();
+    } else if (event.ctrlKey && event.code === "ArrowRight") {
+      goToEnd();
+    } else if (event.code === "ArrowLeft") {
       goBackward();
     } else if (event.code === "ArrowRight") {
       goForward();
@@ -204,6 +208,8 @@ export default function Home() {
       flipBoard();
     } else if (event.code === "KeyA") {
       setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
+    } else if (event.code === "KeyR") {
+      resetBoard();
     }
   });
 
@@ -430,7 +436,7 @@ export default function Home() {
           <div className="flex">
             <input
               type="button"
-              value="Reset"
+              value="Reset (R)"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => resetBoard()}
             />
