@@ -400,18 +400,16 @@ export default function Home() {
   return (
     <main className="h-full flex items-center justify-center flex-col">
       <div className="flex">
+        <div className={`flex h-[500px] ${analysisEnabled ? "" : "invisible"}`}>
+          <EvaluationBar
+            score={bestLines.get(0) ?? { mate: false, score: 0 }}
+          />
+
+          <div className="w-6" />
+        </div>
+
         <div className="flex items-center flex-col">
           <div className="flex">
-            {analysisEnabled ? (
-              <>
-                <EvaluationBar
-                  score={bestLines.get(0) ?? { mate: false, score: 0 }}
-                />
-
-                <div className="w-6" />
-              </>
-            ) : null}
-
             <div className="w-[500px]">
               <Chessboard
                 position={fen}
