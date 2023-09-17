@@ -14,7 +14,7 @@ export default function EvaluationBar(props: { mate: boolean; score: number }) {
             ? props.score > 0
               ? "100%"
               : "0%"
-            : `${50 + 50 * smoothScore(props.score * 100)}%`,
+            : `${50 + 50 * smoothScore(props.score)}%`,
         }}
       ></div>
 

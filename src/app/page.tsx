@@ -103,7 +103,7 @@ export default function Home() {
 
         const scoreIndex = info.indexOf("score");
 
-        let lineScore = parseInt(info[scoreIndex + 2]) / 100;
+        let lineScore = parseInt(info[scoreIndex + 2]);
 
         if (currentTurn.current === "b") {
           lineScore = -lineScore;
