@@ -2,7 +2,7 @@
 
 import { useEvent } from "@/hooks/use-event";
 import { Chess, Move, Square } from "chess.js";
-import { useEffect, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import ChessLines, { ChessLine } from "@/components/chess-lines";
@@ -13,12 +13,19 @@ import useStateWithRef from "@/hooks/use-ref-with-state";
 export default function Home() {
   const [pgn, setPgn] = useState("");
 
-  const game = useRef(new Chess());
+  const game = useRef<Chess>() as MutableRefObject<Chess>;
+  if (game.current == null) {
+    game.current = new Chess();
+  }
+
   const history = useRef<Move[]>([]);
   const [fen, setFen] = useState(game.current.fen());
   const moveIndex = useRef(0);
 
-  const stockfish = useRef<Worker>();
+  const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
+  if (stockfish.current == null) {
+    stockfish.current = new Worker("stockfish-nnue-16.js");
+  }
 
   const currentTurn = useRef<"w" | "b">("w");
 
@@ -64,8 +71,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    stockfish.current = new Worker("stockfish-nnue-16.js");
-
     stockfish.current.onmessage = (event) => {
       console.log(event.data ? event.data : event);
 
