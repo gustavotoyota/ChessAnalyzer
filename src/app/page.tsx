@@ -302,24 +302,13 @@ export default function Home() {
     }
   }
 
-  function onPieceDrop(
-    sourceSquare: Square,
-    targetSquare: Square,
-    piece: string
-  ) {
+  function executeMove(moveStr: string) {
     try {
-      const move = game.current.move({
-        from: sourceSquare,
-        to: targetSquare,
-      });
-
-      if (move == null) {
-        return false;
-      }
+      const moveObject = game.current.move(moveStr);
 
       setCustomMoves([
         ...customMovesRef.current.slice(0, numCustomMoves.current++),
-        move,
+        moveObject,
       ]);
 
       updateBoard();
@@ -328,6 +317,34 @@ export default function Home() {
     } catch {
       return false;
     }
+  }
+
+  function executeMoves(moves: string[]) {
+    let numSuccessful = 0;
+
+    for (const move of moves) {
+      if (executeMove(move)) {
+        numSuccessful++;
+      } else {
+        break;
+      }
+    }
+
+    if (numSuccessful !== moves.length) {
+      for (let i = 0; i < numSuccessful; ++i) {
+        game.current.undo();
+      }
+    }
+
+    return numSuccessful === moves.length;
+  }
+
+  function onPieceDrop(
+    sourceSquare: Square,
+    targetSquare: Square,
+    piece: string
+  ) {
+    return executeMove(sourceSquare + targetSquare);
   }
 
   return (
@@ -433,7 +450,12 @@ export default function Home() {
         <div className="w-8"></div>
 
         <div className="w-96 bg-neutral-700 p-4 text-xs text-neutral-200">
-          <ChessLines lines={bestLines} />
+          <ChessLines
+            lines={bestLines}
+            onMovesSelected={(moves) => {
+              executeMoves(moves.map((move) => move.lan));
+            }}
+          />
         </div>
       </div>
     </main>
