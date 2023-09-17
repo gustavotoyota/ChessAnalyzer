@@ -100,40 +100,44 @@ export default function Home() {
 
         const mate = info[scoreIndex + 1] === "mate";
 
-        bestLines[lineId - 1] = {
-          moves: getMoveObjects(moves),
-          mate: mate,
-          score: score,
-          scoreText: getScoreText({ mate, score }),
-        };
+        setBestLines((oldBestLines) => {
+          const newBestLines = [...oldBestLines];
 
-        setBestLines(bestLines);
+          newBestLines[lineId - 1] = {
+            moves: getMoveObjects(moves),
+            mate: mate,
+            score: score,
+            scoreText: getScoreText({ mate, score }),
+          };
 
-        const newArrows: Arrow[] = [];
-        const moveSet = new Set<string>();
+          const newArrows: Arrow[] = [];
+          const moveSet = new Set<string>();
 
-        for (const [index, line] of Array.from(bestLines.entries())) {
-          if (moveSet.has(line.moves[0].lan)) {
-            continue;
+          for (const [index, line] of Array.from(newBestLines.entries())) {
+            if (moveSet.has(line.moves[0].lan)) {
+              continue;
+            }
+
+            newArrows.push({
+              from: line.moves[0].from,
+              to: line.moves[0].to,
+
+              color: "red",
+              width: 16 - 2 * index,
+
+              text: line.scoreText,
+              textColor: "#185bc9",
+              fontSize: "15",
+              fontWeight: "bold",
+            });
+
+            moveSet.add(line.moves[0].lan);
           }
 
-          newArrows.push({
-            from: line.moves[0].from,
-            to: line.moves[0].to,
+          setArrows(newArrows);
 
-            color: "red",
-            width: 16 - 2 * index,
-
-            text: line.scoreText,
-            textColor: "#185bc9",
-            fontSize: "15",
-            fontWeight: "bold",
-          });
-
-          moveSet.add(line.moves[0].lan);
-        }
-
-        setArrows(newArrows);
+          return newBestLines;
+        });
       }
     };
 
