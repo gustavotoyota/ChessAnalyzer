@@ -297,6 +297,8 @@ export default function Home() {
   }
 
   function goBackward(params?: { updateBoard?: boolean }) {
+    setThreatsModeEnabled(false);
+
     if (numCustomMovesRef.current > 0) {
       setNumCustomMoves(numCustomMovesRef.current - 1);
 
@@ -305,7 +307,11 @@ export default function Home() {
       }
 
       game.current.undo();
-      updateBoard();
+
+      if (params?.updateBoard !== false) {
+        updateBoard();
+      }
+
       return;
     }
 
@@ -323,13 +329,17 @@ export default function Home() {
   }
 
   function goForward(params?: { updateBoard?: boolean }) {
+    setThreatsModeEnabled(false);
+
     if (customMovesRef.current.length > 0) {
       if (numCustomMovesRef.current < customMovesRef.current.length) {
         game.current.move(customMovesRef.current[numCustomMovesRef.current]);
 
         setNumCustomMoves(numCustomMovesRef.current + 1);
 
-        updateBoard();
+        if (params?.updateBoard !== false) {
+          updateBoard();
+        }
       }
 
       return;
@@ -507,6 +517,10 @@ export default function Home() {
   }
 
   async function toggleThreatsMode() {
+    if (!threatsModeEnabledRef.current && game.current.isCheck()) {
+      return;
+    }
+
     setThreatsModeEnabled((oldThreatsModeEnabled) => !oldThreatsModeEnabled);
 
     updateBoard();
