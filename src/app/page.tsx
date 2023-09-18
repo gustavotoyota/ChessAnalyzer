@@ -1,21 +1,20 @@
 "use client";
 
-import { useEvent } from "@/hooks/use-event";
-import { Chess, Move, Square } from "chess.js";
-import { MutableRefObject, useEffect, useRef, useState } from "react";
-import { Chessboard } from "@gustavotoyota/react-chessboard";
-import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
+import Button from "@/components/button";
 import ChessLines from "@/components/chess-lines";
-import { getScoreText } from "@/misc/utils";
 import EvaluationBar from "@/components/evaluation-bar";
-import useStateWithRef from "@/hooks/use-ref-with-state";
+import FenLoader from "@/components/fen-loader";
 import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
-import { ChessLine, MoveScore } from "@/misc/types";
-import FenLoader from "@/components/fen-loader";
-import Dialog from "@/components/dialog";
-import Button from "@/components/button";
 import PlayVsComputerDialog from "@/components/play-vs-computer-dialog";
+import { useEvent } from "@/hooks/use-event";
+import useStateWithRef from "@/hooks/use-ref-with-state";
+import { ChessLine, MoveScore } from "@/misc/types";
+import { getChessMovesFromLine, getScoreText } from "@/misc/chess";
+import { Chessboard } from "@gustavotoyota/react-chessboard";
+import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
+import { Chess, Move, Square } from "chess.js";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const game = useRef<Chess>() as MutableRefObject<Chess>;
@@ -23,21 +22,23 @@ export default function Home() {
     game.current = new Chess();
   }
 
-  const startingPoint = useRef("startpos");
-
-  const [inputFen, setInputFen] = useState(game.current.fen());
+  const [inputFen, setInputFen] = useState(() => game.current.fen());
   const [inputPgn, setInputPgn] = useState(
     game.current.pgn({ maxWidth: 30, newline: "\n" })
   );
 
   const [history, setHistory, historyRef] = useStateWithRef<Move[]>([]);
-  const [boardFen, setBoardFen] = useState(game.current.fen());
+  const [uiFen, setUIFen] = useState(() => game.current.fen());
   const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(0);
 
   const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
 
   const stockfishMoveIndex = useRef(0);
-  const stockfishTurn = useRef<"w" | "b">("w");
+  const stockfishThreatsEnabled = useRef(false);
+  const stockfishGame = useRef<Chess>() as MutableRefObject<Chess>;
+  if (stockfishGame.current == null) {
+    stockfishGame.current = new Chess();
+  }
 
   const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
     Map<number, ChessLine>
@@ -67,145 +68,129 @@ export default function Home() {
   const computerElo = useRef(1320);
   const computerColor = useRef<"white" | "black">("white");
 
-  function getMoveObjects(lans: string[]): Move[] {
-    const moves: Move[] = [];
+  const [threatsModeEnabled, setThreatsModeEnabled, threatsModeEnabledRef] =
+    useStateWithRef(false);
+  const threatsGame = useRef<Chess>() as MutableRefObject<Chess>;
 
-    try {
-      for (const lan of lans) {
-        moves.push(game.current.move(lan));
+  function defaultMessageHandler(event: MessageEvent<any>) {
+    if (event.data.startsWith("info depth")) {
+      const info = event.data.split(" ");
+
+      const lineDepth = info[2];
+      const lineId = info[info.indexOf("multipv") + 1];
+
+      if (
+        (info[3] === "seldepth" && lineDepth === "1" && lineId === "1") ||
+        info[4] === "mate"
+      ) {
+        stockfishMoveIndex.current = moveIndexRef.current;
+        stockfishThreatsEnabled.current = threatsModeEnabledRef.current;
+        stockfishGame.current = new Chess(game.current.fen());
+
+        setBestLines(new Map());
+        setArrows([]);
       }
-    } catch {}
 
-    for (let i = 0; i < moves.length; ++i) {
-      game.current.undo();
+      if (info[3] !== "seldepth") {
+        return;
+      }
+
+      const lineMoves: string[] = [];
+
+      for (
+        let i = info.indexOf("pv") + 1;
+        i < info.length && lineMoves.length < 15;
+        i++
+      ) {
+        lineMoves.push(info[i]);
+      }
+
+      const scoreIndex = info.indexOf("score");
+
+      let lineScore = parseInt(info[scoreIndex + 2]);
+
+      if (stockfishGame.current.turn() === "b") {
+        lineScore = -lineScore;
+      }
+
+      if (stockfishThreatsEnabled.current) {
+        lineScore = -lineScore;
+      }
+
+      const mate = info[scoreIndex + 1] === "mate";
+
+      const scoreText = getScoreText({ mate, score: lineScore });
+
+      bestLinesRef.current.set(lineId - 1, {
+        moves: getChessMovesFromLine(
+          stockfishThreatsEnabled.current ? threatsGame.current : game.current,
+          lineMoves
+        ),
+        mate: mate,
+        score: lineScore,
+        scoreText: scoreText,
+      });
+
+      if (lineId === "1") {
+        setMoveScores((oldMoveScores) => {
+          const newMoveScores = new Map(oldMoveScores);
+
+          newMoveScores.set(stockfishMoveIndex.current, {
+            mate: mate,
+            score: lineScore,
+          });
+
+          return newMoveScores;
+        });
+      }
+
+      setBestLines(new Map(bestLinesRef.current));
+
+      const newArrows: Arrow[] = [];
+      const moveSet = new Set<string>();
+
+      for (const [index, line] of Array.from(bestLinesRef.current.entries())) {
+        if (moveSet.has(line.moves[0].lan)) {
+          continue;
+        }
+
+        newArrows.push({
+          from: line.moves[0].from,
+          to: line.moves[0].to,
+
+          color: stockfishThreatsEnabled.current ? "#c00000" : "#003088",
+          width: 16 - 2 * index,
+          opacity: 0.4 - 0.05 * index,
+
+          text: line.scoreText,
+          textColor: stockfishThreatsEnabled.current ? "#0000b8" : "#b80000",
+          fontSize: "15",
+          fontWeight: "bold",
+        });
+
+        moveSet.add(line.moves[0].lan);
+      }
+
+      setArrows(newArrows);
     }
 
-    if (moves.length === lans.length) {
-      return moves;
-    } else {
-      return lans.map(
-        (lan) =>
-          ({
-            from: lan.slice(0, 2) as Square,
-            to: lan.slice(2, 4) as Square,
-            lan,
-            san: "",
-          } as Move)
+    if (event.data === "uciok") {
+      stockfish.current.postMessage(
+        `setoption name Threads value ${navigator.hardwareConcurrency}`
       );
+      stockfish.current.postMessage("setoption name Hash value 128");
+      stockfish.current.postMessage("setoption name MultiPV value 5");
+
+      updateBoard();
+
+      return;
     }
   }
 
   useEffect(() => {
     stockfish.current = new Worker("stockfish-nnue-16.js");
 
-    stockfish.current.onmessage = (event) => {
-      if (event.data.startsWith("info depth")) {
-        const info = event.data.split(" ");
-
-        const lineDepth = info[2];
-        const lineId = info[info.indexOf("multipv") + 1];
-
-        if (
-          (info[3] === "seldepth" && lineDepth === "1" && lineId === "1") ||
-          info[4] === "mate"
-        ) {
-          stockfishMoveIndex.current = moveIndexRef.current;
-          stockfishTurn.current = game.current.turn();
-
-          setBestLines(new Map());
-          setArrows([]);
-        }
-
-        if (info[3] !== "seldepth") {
-          return;
-        }
-
-        const lineMoves: string[] = [];
-
-        for (
-          let i = info.indexOf("pv") + 1;
-          i < info.length && lineMoves.length < 15;
-          i++
-        ) {
-          lineMoves.push(info[i]);
-        }
-
-        const scoreIndex = info.indexOf("score");
-
-        let lineScore = parseInt(info[scoreIndex + 2]);
-
-        if (stockfishTurn.current === "b") {
-          lineScore = -lineScore;
-        }
-
-        const mate = info[scoreIndex + 1] === "mate";
-
-        const scoreText = getScoreText({ mate, score: lineScore });
-
-        bestLinesRef.current.set(lineId - 1, {
-          moves: getMoveObjects(lineMoves),
-          mate: mate,
-          score: lineScore,
-          scoreText: scoreText,
-        });
-
-        if (lineId === "1") {
-          setMoveScores((oldMoveScores) => {
-            const newMoveScores = new Map(oldMoveScores);
-
-            newMoveScores.set(stockfishMoveIndex.current, {
-              mate: mate,
-              score: lineScore,
-            });
-
-            return newMoveScores;
-          });
-        }
-
-        setBestLines(new Map(bestLinesRef.current));
-
-        const newArrows: Arrow[] = [];
-        const moveSet = new Set<string>();
-
-        for (const [index, line] of Array.from(
-          bestLinesRef.current.entries()
-        )) {
-          if (moveSet.has(line.moves[0].lan)) {
-            continue;
-          }
-
-          newArrows.push({
-            from: line.moves[0].from,
-            to: line.moves[0].to,
-
-            color: "#003088",
-            width: 16 - 2 * index,
-            opacity: 0.4 - 0.05 * index,
-
-            text: line.scoreText,
-            textColor: "#b80000",
-            fontSize: "15",
-            fontWeight: "bold",
-          });
-
-          moveSet.add(line.moves[0].lan);
-        }
-
-        setArrows(newArrows);
-      }
-
-      if (event.data === "uciok") {
-        stockfish.current.postMessage(
-          `setoption name Threads value ${navigator.hardwareConcurrency}`
-        );
-        stockfish.current.postMessage("setoption name Hash value 128");
-        stockfish.current.postMessage("setoption name MultiPV value 5");
-
-        updateBoard();
-
-        return;
-      }
-    };
+    stockfish.current.onmessage = defaultMessageHandler;
 
     stockfish.current.postMessage("uci");
   }, []);
@@ -235,6 +220,8 @@ export default function Home() {
       setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
     } else if (event.code === "KeyR") {
       resetBoard();
+    } else if (event.code === "KeyX") {
+      void toggleThreatsMode();
     }
   });
 
@@ -245,23 +232,27 @@ export default function Home() {
   }
 
   function updateBoard() {
-    const moves = historyRef.current
-      .slice(0, moveIndexRef.current)
-      .concat(customMovesRef.current.slice(0, numCustomMovesRef.current))
-      .map((move) => move.lan)
-      .join(" ");
+    stockfish.current.onmessage = defaultMessageHandler;
 
     stockfish.current.postMessage("stop");
-    if (startingPoint.current === "startpos") {
-      stockfish.current.postMessage(`position startpos moves ${moves}`);
+
+    if (threatsModeEnabledRef.current) {
+      const flippedFenParts = game.current.fen().split(" ");
+
+      flippedFenParts[1] = flippedFenParts[1] === "w" ? "b" : "w";
+
+      const flippedFen = flippedFenParts.join(" ");
+
+      threatsGame.current = new Chess(flippedFen);
+
+      stockfish.current.postMessage(`position fen ${flippedFen}`);
     } else {
-      stockfish.current.postMessage(
-        `position fen ${startingPoint.current} moves ${moves}`
-      );
+      stockfish.current.postMessage(`position fen ${game.current.fen()}`);
     }
+
     stockfish.current.postMessage("go depth 20");
 
-    setBoardFen(game.current.fen());
+    setUIFen(game.current.fen());
 
     setInputFen(game.current.fen());
     setInputPgn(game.current.pgn({ maxWidth: 30, newline: "\n" }));
@@ -373,7 +364,7 @@ export default function Home() {
     }
   }
 
-  function executeMove(moveStr: string) {
+  function _executeMove(moveStr: string) {
     try {
       const moveObject = game.current.move(moveStr);
 
@@ -382,8 +373,6 @@ export default function Home() {
         moveObject,
       ]);
       setNumCustomMoves(numCustomMovesRef.current + 1);
-
-      updateBoard();
 
       return true;
     } catch {
@@ -394,8 +383,10 @@ export default function Home() {
   function executeMoves(moves: string[]) {
     let numSuccessful = 0;
 
+    setThreatsModeEnabled(false);
+
     for (const move of moves) {
-      if (executeMove(move)) {
+      if (_executeMove(move)) {
         numSuccessful++;
       } else {
         break;
@@ -414,6 +405,10 @@ export default function Home() {
       game.current.turn() === computerColor.current[0]
     ) {
       void executeComputerMove();
+    }
+
+    if (numSuccessful === moves.length) {
+      updateBoard();
     }
 
     return numSuccessful === moves.length;
@@ -475,20 +470,10 @@ export default function Home() {
     stockfish.current.postMessage("isready");
     await waitStockfishMessage((message) => message === "readyok");
 
-    const moves = historyRef.current
-      .slice(0, moveIndexRef.current)
-      .concat(customMovesRef.current.slice(0, numCustomMovesRef.current))
-      .map((move) => move.lan)
-      .join(" ");
-
     stockfish.current.postMessage("stop");
-    if (startingPoint.current === "startpos") {
-      stockfish.current.postMessage(`position startpos moves ${moves}`);
-    } else {
-      stockfish.current.postMessage(
-        `position fen ${startingPoint.current} moves ${moves}`
-      );
-    }
+
+    stockfish.current.postMessage(`position fen ${game.current.fen()}`);
+
     stockfish.current.postMessage("go movetime 2000");
 
     const move = await waitStockfishMessage((message) => {
@@ -504,7 +489,7 @@ export default function Home() {
     stockfish.current.postMessage("isready");
     await waitStockfishMessage((message) => message === "readyok");
 
-    executeMove(move);
+    executeMoves([move]);
   }
 
   function checkPromotion(
@@ -519,6 +504,12 @@ export default function Home() {
           targetSquare[1] === "1")) &&
       Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1
     );
+  }
+
+  async function toggleThreatsMode() {
+    setThreatsModeEnabled((oldThreatsModeEnabled) => !oldThreatsModeEnabled);
+
+    updateBoard();
   }
 
   return (
@@ -536,7 +527,7 @@ export default function Home() {
           <div className="flex">
             <div className="w-[500px]">
               <Chessboard
-                position={boardFen}
+                position={uiFen}
                 areArrowsAllowed={false}
                 customArrows={analysisEnabled ? arrows : []}
                 onPieceDrop={(
@@ -614,6 +605,21 @@ export default function Home() {
                 setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled)
               }
             />
+
+            <div className="w-4" />
+
+            {threatsModeEnabled ? (
+              <Button
+                value="Show threats (X)"
+                className="bg-red-600 hover:bg-red-800"
+                onClick={() => toggleThreatsMode()}
+              />
+            ) : (
+              <Button
+                value="Show threats (X)"
+                onClick={() => toggleThreatsMode()}
+              />
+            )}
           </div>
 
           <div className="h-8" />
@@ -622,7 +628,6 @@ export default function Home() {
             fen={inputFen}
             onChange={(fen) => setInputFen(fen)}
             onLoad={(fen) => {
-              startingPoint.current = fen;
               game.current.load(fen);
 
               analyzeGame();
@@ -635,7 +640,6 @@ export default function Home() {
             pgn={inputPgn}
             onChange={(pgn) => setInputPgn(pgn)}
             onLoad={(pgn) => {
-              startingPoint.current = "startpos";
               game.current.loadPgn(pgn);
 
               analyzeGame();
@@ -650,9 +654,9 @@ export default function Home() {
             <>
               <ChessLines
                 lines={bestLines}
-                onMovesSelected={(moves) => {
-                  executeMoves(moves.map((move) => move.lan));
-                }}
+                onMovesSelected={(moves) =>
+                  executeMoves(moves.map((move) => move.lan))
+                }
               />
 
               <div className="h-4"></div>

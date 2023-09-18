@@ -1,5 +1,5 @@
 import { MoveScore } from "@/misc/types";
-import { getScoreText, getSmoothScore } from "@/misc/utils";
+import { getScoreText, getSmoothScore } from "@/misc/chess";
 
 export default function EvaluationBar(props: { score: MoveScore }) {
   return (
