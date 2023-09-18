@@ -705,6 +705,8 @@ export default function Home() {
               config.playerColor === "white" ? "black" : "white";
             setComputerEnabled(true);
 
+            setAnalysisEnabled(!config.hideAnalysis);
+
             setBoardOrientation(config.playerColor);
 
             if (game.current.turn() === computerColor.current[0]) {

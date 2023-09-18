@@ -7,11 +7,14 @@ export default function PlayVsComputerDialog(props: {
   onPlay?: (config: {
     computerElo: number;
     playerColor: "white" | "black";
+    hideAnalysis: boolean;
   }) => void;
 }) {
   const [elo, setElo] = useState(1320);
 
   const [color, setColor] = useState<"white" | "black">("white");
+
+  const [hideAnalysis, setHideAnalysis] = useState(true);
 
   return (
     <Dialog
@@ -69,6 +72,19 @@ export default function PlayVsComputerDialog(props: {
               Black
             </label>
           </div>
+
+          <div className="h-5" />
+
+          <div className="text-center">
+            <label htmlFor="hide-analysis">
+              <input
+                type="checkbox"
+                checked={hideAnalysis}
+                onChange={(event) => setHideAnalysis(event.target.checked)}
+              />{" "}
+              Hide analysis
+            </label>
+          </div>
         </>
       }
       footer={
@@ -84,7 +100,11 @@ export default function PlayVsComputerDialog(props: {
           <Button
             value="Play"
             onClick={() => {
-              props.onPlay?.({ computerElo: elo, playerColor: color });
+              props.onPlay?.({
+                computerElo: elo,
+                playerColor: color,
+                hideAnalysis,
+              });
 
               props.onClose?.();
             }}
