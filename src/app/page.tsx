@@ -57,6 +57,10 @@ export default function Home() {
 
   const [playVsComputerDialogOpen, setPlayVsComputerDialogOpen] =
     useState(false);
+  const [computerEnabled, setComputerEnabled, computerEnabledRef] =
+    useStateWithRef(false);
+  const computerElo = useRef(1320);
+  const computerColor = useRef<"white" | "black">("white");
 
   function getMoveObjects(lans: string[]): Move[] {
     const moves: Move[] = [];
@@ -90,6 +94,8 @@ export default function Home() {
     stockfish.current = new Worker("stockfish-nnue-16.js");
 
     stockfish.current.onmessage = (event) => {
+      console.log(event.data);
+
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
 
@@ -242,15 +248,15 @@ export default function Home() {
       .map((move) => move.lan)
       .join(" ");
 
-    stockfish.current?.postMessage("stop");
+    stockfish.current.postMessage("stop");
     if (startingPoint.current === "startpos") {
-      stockfish.current?.postMessage(`position startpos moves ${moves}`);
+      stockfish.current.postMessage(`position startpos moves ${moves}`);
     } else {
-      stockfish.current?.postMessage(
+      stockfish.current.postMessage(
         `position fen ${startingPoint.current} moves ${moves}`
       );
     }
-    stockfish.current?.postMessage("go depth 20");
+    stockfish.current.postMessage("go depth 20");
 
     setFen(game.current.fen());
   }
@@ -396,6 +402,14 @@ export default function Home() {
       }
     }
 
+    if (
+      numSuccessful === moves.length &&
+      computerEnabledRef.current &&
+      game.current.turn() === computerColor.current[0]
+    ) {
+      void executeComputerMove();
+    }
+
     return numSuccessful === moves.length;
   }
 
@@ -417,6 +431,88 @@ export default function Home() {
     if (executed) {
       updateBoard();
     }
+  }
+
+  async function waitStockfishMessage(
+    filter: (message: string) => any
+  ): Promise<any> {
+    return new Promise((resolve) => {
+      const listener = (event: MessageEvent<any>) => {
+        const result = filter(event.data);
+
+        if (!result) {
+          return;
+        }
+
+        resolve(result);
+
+        stockfish.current.removeEventListener("message", listener);
+      };
+
+      stockfish.current.addEventListener("message", listener);
+    });
+  }
+
+  async function executeComputerMove() {
+    stockfish.current.postMessage("stop");
+
+    stockfish.current.postMessage("isready");
+    await waitStockfishMessage((message) => message === "readyok");
+
+    stockfish.current.postMessage(
+      `setoption name UCI_LimitStrength value true`
+    );
+    stockfish.current.postMessage(
+      `setoption name UCI_Elo value ${computerElo.current}`
+    );
+
+    stockfish.current.postMessage("isready");
+    await waitStockfishMessage((message) => message === "readyok");
+
+    const moves = historyRef.current
+      .slice(0, moveIndexRef.current)
+      .concat(customMovesRef.current.slice(0, numCustomMovesRef.current))
+      .map((move) => move.lan)
+      .join(" ");
+
+    stockfish.current.postMessage("stop");
+    if (startingPoint.current === "startpos") {
+      stockfish.current.postMessage(`position startpos moves ${moves}`);
+    } else {
+      stockfish.current.postMessage(
+        `position fen ${startingPoint.current} moves ${moves}`
+      );
+    }
+    stockfish.current.postMessage("go movetime 2000");
+
+    const move = await waitStockfishMessage((message) => {
+      if (message.startsWith("bestmove")) {
+        return message.split(" ")[1];
+      }
+    });
+
+    stockfish.current.postMessage(
+      `setoption name UCI_LimitStrength value false`
+    );
+
+    stockfish.current.postMessage("isready");
+    await waitStockfishMessage((message) => message === "readyok");
+
+    executeMove(move);
+  }
+
+  function checkPromotion(
+    sourceSquare: Square,
+    targetSquare: Square,
+    piece: string
+  ): boolean {
+    return (
+      ((piece === "wP" && sourceSquare[1] === "7" && targetSquare[1] === "8") ||
+        (piece === "bP" &&
+          sourceSquare[1] === "2" &&
+          targetSquare[1] === "1")) &&
+      Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1
+    );
   }
 
   return (
@@ -441,7 +537,22 @@ export default function Home() {
                   sourceSquare: Square,
                   targetSquare: Square,
                   piece: string
-                ) => executeMove(sourceSquare + targetSquare)}
+                ) => {
+                  if (
+                    checkPromotion(
+                      sourceSquare,
+                      targetSquare,
+                      game.current.get(sourceSquare).color +
+                        game.current.get(sourceSquare).type.toUpperCase()
+                    )
+                  ) {
+                    return executeMoves([
+                      `${sourceSquare}${targetSquare}=${piece.at(-1)}`,
+                    ]);
+                  } else {
+                    return executeMoves([`${sourceSquare}${targetSquare}`]);
+                  }
+                }}
                 boardOrientation={boardOrientation}
               ></Chessboard>
             </div>
@@ -476,18 +587,18 @@ export default function Home() {
           <div className="h-4" />
 
           <div className="flex">
-            <Button
-              value="Play vs. computer"
-              onClick={() =>
-                setPlayVsComputerDialogOpen((oldPlayVsComputerDialogOpen) => {
-                  if (oldPlayVsComputerDialogOpen) {
-                    return false;
-                  } else {
-                    return true;
-                  }
-                })
-              }
-            />
+            {computerEnabled ? (
+              <Button
+                value="Play vs. computer"
+                className="bg-red-600 hover:bg-red-800"
+                onClick={() => setComputerEnabled(false)}
+              />
+            ) : (
+              <Button
+                value="Play vs. computer"
+                onClick={() => setPlayVsComputerDialogOpen(true)}
+              />
+            )}
 
             <div className="w-4" />
 
@@ -552,6 +663,18 @@ export default function Home() {
 
       {playVsComputerDialogOpen && (
         <PlayVsComputerDialog
+          onPlay={(config) => {
+            computerElo.current = config.computerElo;
+            computerColor.current =
+              config.playerColor === "white" ? "black" : "white";
+            setComputerEnabled(true);
+
+            setBoardOrientation(config.playerColor);
+
+            if (game.current.turn() === computerColor.current[0]) {
+              void executeComputerMove();
+            }
+          }}
           onClose={() => setPlayVsComputerDialogOpen(false)}
         />
       )}

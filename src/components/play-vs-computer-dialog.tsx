@@ -4,7 +4,10 @@ import Dialog from "./dialog";
 
 export default function PlayVsComputerDialog(props: {
   onClose?: () => void;
-  onPlay?: (config: { elo: number; color: "white" | "black" }) => void;
+  onPlay?: (config: {
+    computerElo: number;
+    playerColor: "white" | "black";
+  }) => void;
 }) {
   const [elo, setElo] = useState(1320);
 
@@ -81,7 +84,7 @@ export default function PlayVsComputerDialog(props: {
           <Button
             value="Play"
             onClick={() => {
-              props.onPlay?.({ elo, color });
+              props.onPlay?.({ computerElo: elo, playerColor: color });
 
               props.onClose?.();
             }}
