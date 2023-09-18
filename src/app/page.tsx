@@ -667,6 +667,7 @@ export default function Home() {
           {analysisEnabled && (
             <>
               <ChessLines
+                startingFen={uiFen}
                 lines={bestLines}
                 onMovesSelected={(moves) =>
                   executeMoves(moves.map((move) => move.lan))

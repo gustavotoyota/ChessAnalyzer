@@ -1,10 +1,18 @@
 import { ChessLine, MoveScore } from "@/misc/types";
-import { Move } from "chess.js";
+import { Chessboard } from "@gustavotoyota/react-chessboard";
+import { Chess, Move } from "chess.js";
+import { useState } from "react";
 
 export default function ChessLines(props: {
+  startingFen: string;
   lines: Map<number, ChessLine>;
   onMovesSelected?: (moves: Move[]) => void;
 }) {
+  const [miniBoardX, setMiniBoardX] = useState(0);
+  const [miniBoardY, setMiniBoardY] = useState(0);
+  const [miniBoardVisible, setMiniBoardVisible] = useState(false);
+  const [miniBoardFen, setMiniBoardFen] = useState(props.startingFen);
+
   return (
     <>
       {[0, 1, 2, 3, 4]
@@ -12,7 +20,7 @@ export default function ChessLines(props: {
         .map((line, i) => (
           <div
             key={i}
-            className="border-b border-neutral-400 py-1 overflow-hidden overflow-ellipsis whitespace-nowrap"
+            className="border-b border-neutral-400 overflow-hidden overflow-ellipsis whitespace-nowrap"
           >
             {line != null ? (
               <>
@@ -28,25 +36,51 @@ export default function ChessLines(props: {
                 <div className="inline-block w-2"></div>
 
                 {line.moves.map((move, i) => (
-                  <span key={i}>
-                    <span
-                      className="cursor-pointer"
-                      onClick={() =>
-                        props.onMovesSelected?.(line.moves.slice(0, i + 1))
-                      }
-                    >
-                      {move.san}
-                    </span>
+                  <div
+                    key={i}
+                    className="inline-block cursor-pointer p-1 hover:bg-white/20 rounded-sm"
+                    onClick={() =>
+                      props.onMovesSelected?.(line.moves.slice(0, i + 1))
+                    }
+                    onPointerMove={(event) => {
+                      setMiniBoardX(event.clientX);
+                      setMiniBoardY(event.clientY);
+                    }}
+                    onPointerEnter={() => {
+                      try {
+                        const game = new Chess(props.startingFen);
 
-                    <div className="inline-block w-1"></div>
-                  </span>
+                        for (let j = 0; j < i; j++) {
+                          game.move(line.moves[j]);
+                        }
+
+                        setMiniBoardFen(game.fen());
+
+                        setMiniBoardVisible(true);
+                      } catch {}
+                    }}
+                    onPointerLeave={() => setMiniBoardVisible(false)}
+                  >
+                    {move.san}
+                  </div>
                 ))}
               </>
             ) : (
-              <>&nbsp;</>
+              <div className="inline-block p-1">&nbsp;</div>
             )}
           </div>
         ))}
+
+      {miniBoardVisible && (
+        <div
+          className="fixed p-1 bg-neutral-400"
+          style={{ left: `${miniBoardX - 64}px`, top: `${miniBoardY + 24}px` }}
+        >
+          <div className="w-32 h-32">
+            <Chessboard position={miniBoardFen} />
+          </div>
+        </div>
+      )}
     </>
   );
 }
