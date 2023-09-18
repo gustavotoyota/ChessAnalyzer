@@ -671,7 +671,9 @@ export default function Home() {
           {analysisEnabled && (
             <>
               <ChessLines
-                startingFen={uiFen}
+                startingFen={
+                  threatsModeEnabled ? threatsGame.current.fen() : uiFen
+                }
                 lines={bestLines}
                 onMovesSelected={(moves) =>
                   executeMoves(moves.map((move) => move.lan))
