@@ -40,3 +40,13 @@ export function getChessMovesFromLine(game: Chess, lans: string[]): Move[] {
     );
   }
 }
+
+export function getStartingFen(game: Chess) {
+  const clone = new Chess();
+
+  clone.loadPgn(game.pgn());
+
+  while (clone.undo()) {}
+
+  return clone.fen();
+}

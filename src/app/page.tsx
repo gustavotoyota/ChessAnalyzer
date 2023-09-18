@@ -10,7 +10,11 @@ import PlayVsComputerDialog from "@/components/play-vs-computer-dialog";
 import { useEvent } from "@/hooks/use-event";
 import useStateWithRef from "@/hooks/use-ref-with-state";
 import { ChessLine, MoveScore } from "@/misc/types";
-import { getChessMovesFromLine, getScoreText } from "@/misc/chess";
+import {
+  getChessMovesFromLine,
+  getScoreText,
+  getStartingFen,
+} from "@/misc/chess";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import { Chess, Move, Square } from "chess.js";
@@ -679,6 +683,7 @@ export default function Home() {
           )}
 
           <GameHistory
+            startingFen={getStartingFen(game.current)}
             moveIndex={moveIndex + numCustomMoves - 1}
             numCustomMoves={customMoves.length}
             moves={(customMoves.length > 0
