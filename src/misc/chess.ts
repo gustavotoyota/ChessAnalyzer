@@ -41,12 +41,16 @@ export function getChessMovesFromLine(game: Chess, lans: string[]): Move[] {
   }
 }
 
-export function getStartingFen(game: Chess) {
+export function getStartingFen(game: Chess): string {
   const clone = new Chess();
 
-  clone.loadPgn(game.pgn());
+  try {
+    clone.loadPgn(game.pgn());
 
-  while (clone.undo()) {}
+    while (clone.undo()) {}
 
-  return clone.fen();
+    return clone.fen();
+  } catch {
+    return clone.fen();
+  }
 }
