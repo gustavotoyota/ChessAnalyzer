@@ -46,7 +46,7 @@ export default function GameHistory(props: {
           return acc;
         }, [] as [Move, Move][])
         .map(([whiteMove, blackMove], i) => (
-          <div key={i} className="flex items-center">
+          <div key={i} className="flex items-center mb-1">
             <div className="w-6">{i + 1}.</div>
 
             <div className="w-2"></div>
