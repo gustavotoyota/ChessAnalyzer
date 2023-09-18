@@ -51,8 +51,8 @@ export default function Home() {
   const [analysisEnabled, setAnalysisEnabled] = useState(true);
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
-  const [numCustomMoves, setNumCustomMoves, numCustomMovesRef] =
-    useStateWithRef(0);
+  const [customMoveIndex, setCustomMoveIndex, customMoveIndexRef] =
+    useStateWithRef(-1);
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
     []
   );
@@ -265,7 +265,7 @@ export default function Home() {
   function analyzeGame() {
     setHistory(game.current.history({ verbose: true }));
 
-    setNumCustomMoves(0);
+    setCustomMoveIndex(-1);
     setCustomMoves([]);
 
     setMoveIndex(historyRef.current.length);
@@ -278,7 +278,7 @@ export default function Home() {
 
     setHistory([]);
 
-    setNumCustomMoves(0);
+    setCustomMoveIndex(-1);
     setCustomMoves([]);
 
     setMoveIndex(0);
@@ -289,7 +289,7 @@ export default function Home() {
   function goToBeginning() {
     let executed = false;
 
-    while (numCustomMovesRef.current > 0 || moveIndexRef.current > 0) {
+    while (customMoveIndexRef.current >= 0 || moveIndexRef.current > 0) {
       goBackward({ updateBoard: false });
 
       executed = true;
@@ -303,10 +303,10 @@ export default function Home() {
   function goBackward(params?: { updateBoard?: boolean }) {
     setThreatsModeEnabled(false);
 
-    if (numCustomMovesRef.current > 0) {
-      setNumCustomMoves(numCustomMovesRef.current - 1);
+    if (customMoveIndexRef.current >= 0) {
+      setCustomMoveIndex(customMoveIndexRef.current - 1);
 
-      if (numCustomMovesRef.current <= 0 && historyRef.current.length > 0) {
+      if (customMoveIndexRef.current < 0 && historyRef.current.length > 0) {
         setCustomMoves([]);
       }
 
@@ -336,10 +336,10 @@ export default function Home() {
     setThreatsModeEnabled(false);
 
     if (customMovesRef.current.length > 0) {
-      if (numCustomMovesRef.current < customMovesRef.current.length) {
-        game.current.move(customMovesRef.current[numCustomMovesRef.current]);
+      if (customMoveIndexRef.current < customMovesRef.current.length - 1) {
+        setCustomMoveIndex(customMoveIndexRef.current + 1);
 
-        setNumCustomMoves(numCustomMovesRef.current + 1);
+        game.current.move(customMovesRef.current[customMoveIndexRef.current]);
 
         if (params?.updateBoard !== false) {
           updateBoard();
@@ -365,7 +365,7 @@ export default function Home() {
     let executed = false;
 
     while (
-      numCustomMovesRef.current < customMovesRef.current.length ||
+      customMoveIndexRef.current < customMovesRef.current.length - 1 ||
       moveIndexRef.current < historyRef.current.length
     ) {
       goForward({ updateBoard: false });
@@ -382,11 +382,11 @@ export default function Home() {
     try {
       const moveObject = game.current.move(moveStr);
 
+      setCustomMoveIndex(customMoveIndexRef.current + 1);
       setCustomMoves([
-        ...customMovesRef.current.slice(0, numCustomMovesRef.current),
+        ...customMovesRef.current.slice(0, customMoveIndexRef.current),
         moveObject,
       ]);
-      setNumCustomMoves(numCustomMovesRef.current + 1);
 
       return true;
     } catch {
@@ -431,13 +431,13 @@ export default function Home() {
   function goToMove(moveIndex: number) {
     let executed = false;
 
-    while (moveIndex < moveIndexRef.current + numCustomMovesRef.current - 1) {
+    while (moveIndex < moveIndexRef.current + customMoveIndexRef.current) {
       goBackward({ updateBoard: false });
 
       executed = true;
     }
 
-    while (moveIndex > moveIndexRef.current + numCustomMovesRef.current - 1) {
+    while (moveIndex > moveIndexRef.current + customMoveIndexRef.current) {
       goForward({ updateBoard: false });
 
       executed = true;
@@ -686,8 +686,8 @@ export default function Home() {
 
           <GameHistory
             startingFen={getStartingFen(game.current)}
-            moveIndex={moveIndex + numCustomMoves - 1}
-            numCustomMoves={customMoves.length}
+            moveIndex={moveIndex + customMoveIndex}
+            customMoveIndex={customMoves.length}
             moves={(customMoves.length > 0
               ? history.slice(0, moveIndex)
               : history
