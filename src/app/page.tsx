@@ -57,10 +57,6 @@ export default function Home() {
     []
   );
 
-  const [moveScores, setMoveScores] = useState<Map<number, MoveScore>>(
-    new Map()
-  );
-
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
     "white"
   );
@@ -134,19 +130,6 @@ export default function Home() {
         score: lineScore,
         scoreText: scoreText,
       });
-
-      if (lineId === "1") {
-        setMoveScores((oldMoveScores) => {
-          const newMoveScores = new Map(oldMoveScores);
-
-          newMoveScores.set(stockfishMoveIndex.current, {
-            mate: mate,
-            score: lineScore,
-          });
-
-          return newMoveScores;
-        });
-      }
 
       setBestLines(new Map(bestLinesRef.current));
 
