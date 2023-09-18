@@ -50,7 +50,7 @@ export default function ChessLines(props: {
                       try {
                         const game = new Chess(props.startingFen);
 
-                        for (let j = 0; j < i; j++) {
+                        for (let j = 0; j < i + 1; j++) {
                           game.move(line.moves[j]);
                         }
 
