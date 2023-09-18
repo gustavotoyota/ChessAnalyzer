@@ -4,7 +4,7 @@ import { MoveScore } from "./types";
 export function getScoreText(score: MoveScore) {
   return score.mate
     ? `M${Math.abs(score.score)}`
-    : `${score.score >= 0 ? "+" : ""}${(score.score / 100).toFixed(1)}`;
+    : `${score.score >= 0 ? "+" : ""}${(score.score / 100).toFixed(2)}`;
 }
 
 export function getSmoothScore(score: MoveScore) {
