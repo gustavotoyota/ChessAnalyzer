@@ -25,8 +25,13 @@ export default function Home() {
 
   const startingPoint = useRef("startpos");
 
+  const [inputFen, setInputFen] = useState(game.current.fen());
+  const [inputPgn, setInputPgn] = useState(
+    game.current.pgn({ maxWidth: 30, newline: "\n" })
+  );
+
   const [history, setHistory, historyRef] = useStateWithRef<Move[]>([]);
-  const [fen, setFen] = useState(game.current.fen());
+  const [boardFen, setBoardFen] = useState(game.current.fen());
   const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(0);
 
   const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
@@ -94,8 +99,6 @@ export default function Home() {
     stockfish.current = new Worker("stockfish-nnue-16.js");
 
     stockfish.current.onmessage = (event) => {
-      console.log(event.data);
-
       if (event.data.startsWith("info depth")) {
         const info = event.data.split(" ");
 
@@ -258,7 +261,10 @@ export default function Home() {
     }
     stockfish.current.postMessage("go depth 20");
 
-    setFen(game.current.fen());
+    setBoardFen(game.current.fen());
+
+    setInputFen(game.current.fen());
+    setInputPgn(game.current.pgn({ maxWidth: 30, newline: "\n" }));
   }
 
   function analyzeGame() {
@@ -530,7 +536,7 @@ export default function Home() {
           <div className="flex">
             <div className="w-[500px]">
               <Chessboard
-                position={fen}
+                position={boardFen}
                 areArrowsAllowed={false}
                 customArrows={analysisEnabled ? arrows : []}
                 onPieceDrop={(
@@ -613,6 +619,8 @@ export default function Home() {
           <div className="h-8" />
 
           <FenLoader
+            fen={inputFen}
+            onChange={(fen) => setInputFen(fen)}
             onLoad={(fen) => {
               startingPoint.current = fen;
               game.current.load(fen);
@@ -624,6 +632,8 @@ export default function Home() {
           <div className="h-6" />
 
           <PgnLoader
+            pgn={inputPgn}
+            onChange={(pgn) => setInputPgn(pgn)}
             onLoad={(pgn) => {
               startingPoint.current = "startpos";
               game.current.loadPgn(pgn);
