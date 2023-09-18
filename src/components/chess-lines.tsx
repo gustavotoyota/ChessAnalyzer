@@ -25,15 +25,25 @@ export default function ChessLines(props: {
             {line != null ? (
               <>
                 <span
-                  className="font-bold cursor-pointer"
+                  className="font-bold cursor-pointer p-1 pr-2"
                   onClick={() =>
                     props.onMovesSelected?.(line.moves.slice(0, 1))
                   }
+                  onPointerMove={(event) => {
+                    setMiniBoardX(event.clientX);
+                    setMiniBoardY(event.clientY);
+                  }}
+                  onPointerEnter={() => {
+                    try {
+                      setMiniBoardFen(props.startingFen);
+
+                      setMiniBoardVisible(true);
+                    } catch {}
+                  }}
+                  onPointerLeave={() => setMiniBoardVisible(false)}
                 >
                   {line.scoreText}
                 </span>
-
-                <div className="inline-block w-2"></div>
 
                 {line.moves.map((move, i) => (
                   <div
