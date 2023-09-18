@@ -670,11 +670,8 @@ export default function Home() {
           <GameHistory
             startingFen={getStartingFen(game.current)}
             moveIndex={moveIndex + customMoveIndex}
-            customMoveIndex={customMoves.length}
-            moves={(customMoves.length > 0
-              ? history.slice(0, moveIndex)
-              : history
-            ).concat(customMoves)}
+            numCustomMoves={customMoves.length}
+            moves={allMoves}
             onMoveSelected={(moveIndex) => goToMove(moveIndex)}
           />
         </div>

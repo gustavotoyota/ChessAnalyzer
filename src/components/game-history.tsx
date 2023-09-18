@@ -6,7 +6,7 @@ function getMoveColor(params: {
   activeMoveIndex: number;
   renderMoveIndex: number;
   numMoves: number;
-  customMoveIndex: number;
+  numCustomMoves: number;
 }) {
   if (params.renderMoveIndex >= params.numMoves) {
     return "";
@@ -14,7 +14,7 @@ function getMoveColor(params: {
 
   const isActive = params.activeMoveIndex === params.renderMoveIndex;
   const isCustomMove =
-    params.renderMoveIndex >= params.numMoves - params.customMoveIndex;
+    params.renderMoveIndex >= params.numMoves - params.numCustomMoves;
 
   if (isActive) {
     if (isCustomMove) {
@@ -34,7 +34,7 @@ function getMoveColor(params: {
 export default function GameHistory(props: {
   startingFen: string;
   moveIndex: number;
-  customMoveIndex: number;
+  numCustomMoves: number;
   moves: Move[];
   onMoveSelected?: (moveIndex: number) => void;
 }) {
@@ -65,7 +65,7 @@ export default function GameHistory(props: {
                   activeMoveIndex: props.moveIndex,
                   renderMoveIndex: i * 2,
                   numMoves: props.moves.length,
-                  customMoveIndex: props.customMoveIndex,
+                  numCustomMoves: props.numCustomMoves,
                 }
               )}`}
               onClick={() => props.onMoveSelected?.(i * 2)}
@@ -97,7 +97,7 @@ export default function GameHistory(props: {
                   activeMoveIndex: props.moveIndex,
                   renderMoveIndex: i * 2 + 1,
                   numMoves: props.moves.length,
-                  customMoveIndex: props.customMoveIndex,
+                  numCustomMoves: props.numCustomMoves,
                 }
               )}`}
               onClick={() => props.onMoveSelected?.(i * 2 + 1)}
