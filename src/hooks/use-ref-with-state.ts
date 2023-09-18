@@ -1,9 +1,24 @@
-import { SetStateAction, useRef, useState } from "react";
+import {
+  Dispatch,
+  MutableRefObject,
+  SetStateAction,
+  useRef,
+  useState,
+} from "react";
 
-export default function useStateWithRef<T>(initialState: T) {
-  const [state, setState] = useState(initialState);
+export default function useStateWithRef<T = undefined>(initialState?: () => T) {
+  let initialValue;
 
-  const ref = useRef(initialState);
+  if (initialState != null) {
+    initialValue = initialState();
+  }
+
+  const [state, setState] = useState(initialValue) as [
+    T,
+    Dispatch<SetStateAction<T>>
+  ];
+
+  const ref = useRef(initialValue) as MutableRefObject<T>;
 
   return [
     state,

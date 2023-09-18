@@ -9,52 +9,56 @@ import PgnLoader from "@/components/pgn-loader";
 import PlayVsComputerDialog from "@/components/play-vs-computer-dialog";
 import { useEvent } from "@/hooks/use-event";
 import useStateWithRef from "@/hooks/use-ref-with-state";
-import { ChessLine, MoveScore } from "@/misc/types";
+import useValueRef from "@/hooks/use-value-ref";
 import {
   getChessMovesFromLine,
   getScoreText,
   getStartingFen,
 } from "@/misc/chess";
+import { ChessLine } from "@/misc/types";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import { Chess, Move, Square } from "chess.js";
-import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function Home() {
-  const game = useRef<Chess>() as MutableRefObject<Chess>;
-  if (game.current == null) {
-    game.current = new Chess();
-  }
+  const game = useValueRef(() => new Chess());
+  const [startingFen, setStartingFen] = useState(() => game.current.fen());
 
   const [inputFen, setInputFen] = useState(() => game.current.fen());
-  const [inputPgn, setInputPgn] = useState(
+  const [inputPgn, setInputPgn] = useState(() =>
     game.current.pgn({ maxWidth: 30, newline: "\n" })
   );
 
-  const [history, setHistory, historyRef] = useStateWithRef<Move[]>([]);
+  const [history, setHistory, historyRef] = useStateWithRef<Move[]>(() => []);
   const [uiFen, setUIFen] = useState(() => game.current.fen());
-  const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(0);
+  const [moveIndex, setMoveIndex, moveIndexRef] = useStateWithRef(() => 0);
 
-  const stockfish = useRef<Worker>() as MutableRefObject<Worker>;
+  const stockfish = useValueRef<Worker>();
 
-  const stockfishMoveIndex = useRef(0);
-  const stockfishThreatsEnabled = useRef(false);
-  const stockfishGame = useRef<Chess>() as MutableRefObject<Chess>;
-  if (stockfishGame.current == null) {
-    stockfishGame.current = new Chess();
-  }
+  const stockfishMoveIndex = useValueRef(() => 0);
+  const stockfishThreatsEnabled = useValueRef(() => false);
+  const stockfishGame = useValueRef(() => new Chess());
 
   const [bestLines, setBestLines, bestLinesRef] = useStateWithRef<
     Map<number, ChessLine>
-  >(new Map());
+  >(() => new Map());
 
   const [analysisEnabled, setAnalysisEnabled] = useState(true);
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
   const [customMoveIndex, setCustomMoveIndex, customMoveIndexRef] =
-    useStateWithRef(-1);
+    useStateWithRef(() => -1);
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
-    []
+    () => []
+  );
+
+  const allMoves = useMemo(
+    () =>
+      (customMoves.length > 0 ? history.slice(0, moveIndex) : history).concat(
+        customMoves
+      ),
+    [history, moveIndex, customMoves]
   );
 
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
@@ -64,13 +68,15 @@ export default function Home() {
   const [playVsComputerDialogOpen, setPlayVsComputerDialogOpen] =
     useState(false);
   const [computerEnabled, setComputerEnabled, computerEnabledRef] =
-    useStateWithRef(false);
-  const computerElo = useRef(1320);
-  const computerColor = useRef<"white" | "black">("white");
+    useStateWithRef(() => false);
+  const computerElo = useValueRef(() => 1320);
+  const computerColor = useValueRef<"white" | "black">(() => "white");
 
   const [threatsModeEnabled, setThreatsModeEnabled, threatsModeEnabledRef] =
-    useStateWithRef(false);
-  const threatsGame = useRef<Chess>() as MutableRefObject<Chess>;
+    useStateWithRef(() => false);
+  const [threatsGame, setThreatsGame, threatsGameRef] = useStateWithRef(
+    () => new Chess()
+  );
 
   function defaultMessageHandler(event: MessageEvent<any>) {
     if (event.data.startsWith("info depth")) {
@@ -123,7 +129,9 @@ export default function Home() {
 
       bestLinesRef.current.set(lineId - 1, {
         moves: getChessMovesFromLine(
-          stockfishThreatsEnabled.current ? threatsGame.current : game.current,
+          stockfishThreatsEnabled.current
+            ? threatsGameRef.current
+            : game.current,
           lineMoves
         ),
         mate: mate,
@@ -230,7 +238,7 @@ export default function Home() {
 
       const flippedFen = flippedFenParts.join(" ");
 
-      threatsGame.current = new Chess(flippedFen);
+      setThreatsGame(new Chess(flippedFen));
 
       stockfish.current.postMessage(`position fen ${flippedFen}`);
     } else {
@@ -246,6 +254,8 @@ export default function Home() {
   }
 
   function analyzeGame() {
+    setStartingFen(getStartingFen(game.current));
+
     setHistory(game.current.history({ verbose: true }));
 
     setCustomMoveIndex(-1);
@@ -258,6 +268,8 @@ export default function Home() {
 
   function resetBoard() {
     game.current.reset();
+
+    setStartingFen(game.current.fen());
 
     setHistory([]);
 
@@ -654,9 +666,7 @@ export default function Home() {
           {analysisEnabled && (
             <>
               <ChessLines
-                startingFen={
-                  threatsModeEnabled ? threatsGame.current.fen() : uiFen
-                }
+                startingFen={threatsModeEnabled ? threatsGame.fen() : uiFen}
                 lines={bestLines}
                 onMovesSelected={(moves) =>
                   executeMoves(moves.map((move) => move.lan))
@@ -668,7 +678,7 @@ export default function Home() {
           )}
 
           <GameHistory
-            startingFen={getStartingFen(game.current)}
+            startingFen={startingFen}
             moveIndex={moveIndex + customMoveIndex}
             numCustomMoves={customMoves.length}
             moves={allMoves}

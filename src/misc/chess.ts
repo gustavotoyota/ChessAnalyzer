@@ -13,6 +13,16 @@ export function getSmoothScore(score: MoveScore) {
     : 2 / (1 + Math.exp(-0.00368208 * score.score)) - 1;
 }
 
+export function getGameFromMoves(startingFen: string, moves: Move[]) {
+  const game = new Chess(startingFen);
+
+  for (const move of moves) {
+    game.move(move);
+  }
+
+  return game;
+}
+
 export function getChessMovesFromLine(game: Chess, lans: string[]): Move[] {
   const moves: Move[] = [];
 
