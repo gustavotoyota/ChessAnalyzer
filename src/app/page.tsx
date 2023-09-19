@@ -558,6 +558,18 @@ export default function Home() {
                 position={uiFen}
                 areArrowsAllowed={false}
                 customArrows={analysisEnabled ? arrows : []}
+                customArrowColors={{
+                  default: "#ffaa00",
+                  ctrl: "#f8553f",
+                  shift: "#9fcf3f",
+                  alt: "#48c1f9",
+                }}
+                customHighlightColors={{
+                  default: "#f8553f",
+                  ctrl: "#ffaa00",
+                  shift: "#9fcf3f",
+                  alt: "#48c1f9",
+                }}
                 onPieceDrop={(
                   sourceSquare: Square,
                   targetSquare: Square,
