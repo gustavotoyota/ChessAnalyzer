@@ -20,7 +20,10 @@ import { ChessLine } from "@/misc/types";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import { Chess, Move, Square } from "chess.js";
+import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const game = useValueRef(() => new Chess());
@@ -557,232 +560,247 @@ export default function Home() {
   }
 
   return (
-    <main className="pt-12 flex items-center flex-col">
-      <div className="flex">
-        <div
-          className={`flex h-[31.25rem] ${analysisEnabled ? "" : "invisible"}`}
-        >
-          <EvaluationBar
-            score={bestLines.get(0) ?? { mate: false, score: 0 }}
-          />
-
-          <div className="w-6" />
-        </div>
-
-        <div className="flex items-center flex-col">
+    <html
+      lang="en"
+      style={{
+        fontSize: clientWidth < 650 ? `${clientWidth / 650}rem` : undefined,
+      }}
+    >
+      <body className={inter.className}>
+        <main className="pt-12 flex items-center flex-col">
           <div className="flex">
-            <div className="w-[31.25rem]">
-              <Chessboard
-                position={uiFen}
-                areArrowsAllowed={false}
-                customArrows={analysisEnabled ? arrows : []}
-                customArrowColors={{
-                  default: "#ffaa00",
-                  ctrl: "#f8553f",
-                  shift: "#9fcf3f",
-                  alt: "#48c1f9",
-                }}
-                customHighlightColors={{
-                  default: "#f8553f",
-                  ctrl: "#ffaa00",
-                  shift: "#9fcf3f",
-                  alt: "#48c1f9",
-                }}
-                onPieceDrop={(
-                  sourceSquare: Square,
-                  targetSquare: Square,
-                  piece: string
-                ) => {
-                  if (
-                    checkPromotion(
-                      sourceSquare,
-                      targetSquare,
-                      game.current.get(sourceSquare).color +
-                        game.current.get(sourceSquare).type.toUpperCase()
-                    )
-                  ) {
-                    return executeMoves([
-                      `${sourceSquare}${targetSquare}=${piece.at(-1)}`,
-                    ]);
-                  } else {
-                    return executeMoves([`${sourceSquare}${targetSquare}`]);
-                  }
-                }}
-                boardOrientation={boardOrientation}
-              ></Chessboard>
+            <div
+              className={`flex h-[31.25rem] ${
+                analysisEnabled ? "" : "invisible"
+              }`}
+            >
+              <EvaluationBar
+                score={bestLines.get(0) ?? { mate: false, score: 0 }}
+              />
+
+              <div className="w-6" />
             </div>
-          </div>
 
-          <div className="h-8" />
+            <div className="flex items-center flex-col">
+              <div className="flex">
+                <div className="w-[31.25rem]">
+                  <Chessboard
+                    position={uiFen}
+                    areArrowsAllowed={false}
+                    customArrows={analysisEnabled ? arrows : []}
+                    customArrowColors={{
+                      default: "#ffaa00",
+                      ctrl: "#f8553f",
+                      shift: "#9fcf3f",
+                      alt: "#48c1f9",
+                    }}
+                    customHighlightColors={{
+                      default: "#f8553f",
+                      ctrl: "#ffaa00",
+                      shift: "#9fcf3f",
+                      alt: "#48c1f9",
+                    }}
+                    onPieceDrop={(
+                      sourceSquare: Square,
+                      targetSquare: Square,
+                      piece: string
+                    ) => {
+                      if (
+                        checkPromotion(
+                          sourceSquare,
+                          targetSquare,
+                          game.current.get(sourceSquare).color +
+                            game.current.get(sourceSquare).type.toUpperCase()
+                        )
+                      ) {
+                        return executeMoves([
+                          `${sourceSquare}${targetSquare}=${piece.at(-1)}`,
+                        ]);
+                      } else {
+                        return executeMoves([`${sourceSquare}${targetSquare}`]);
+                      }
+                    }}
+                    boardOrientation={boardOrientation}
+                  ></Chessboard>
+                </div>
+              </div>
 
-          <div className="flex">
-            <Button value="Reset (R)" onClick={() => resetBoard()} />
+              <div className="h-8" />
 
-            <div className="w-4" />
+              <div className="flex">
+                <Button value="Reset (R)" onClick={() => resetBoard()} />
 
-            <Button value="|<" onClick={() => goToBeginning()} />
+                <div className="w-4" />
 
-            <div className="w-4" />
+                <Button value="|<" onClick={() => goToBeginning()} />
 
-            <Button value="<" onClick={() => goBackward()} />
+                <div className="w-4" />
 
-            <div className="w-2" />
+                <Button value="<" onClick={() => goBackward()} />
 
-            <Button value=">" onClick={() => goForward()} />
+                <div className="w-2" />
 
-            <div className="w-4" />
+                <Button value=">" onClick={() => goForward()} />
 
-            <Button value=">|" onClick={() => goToEnd()} />
+                <div className="w-4" />
 
-            <div className="w-4" />
+                <Button value=">|" onClick={() => goToEnd()} />
 
-            <Button value="Flip (F)" onClick={() => flipBoard()} />
-          </div>
+                <div className="w-4" />
 
-          <div className="h-4" />
+                <Button value="Flip (F)" onClick={() => flipBoard()} />
+              </div>
 
-          <div className="flex">
-            {computerEnabled ? (
-              <Button
-                value="Play vs. computer"
-                className="bg-red-600 hover:bg-red-800"
-                onClick={() => setComputerEnabled(false)}
-              />
-            ) : (
-              <Button
-                value="Play vs. computer"
-                onClick={() => setPlayVsComputerDialogOpen(true)}
-              />
-            )}
+              <div className="h-4" />
 
-            <div className="w-4" />
+              <div className="flex">
+                {computerEnabled ? (
+                  <Button
+                    value="Play vs. computer"
+                    className="bg-red-600 hover:bg-red-800"
+                    onClick={() => setComputerEnabled(false)}
+                  />
+                ) : (
+                  <Button
+                    value="Play vs. computer"
+                    onClick={() => setPlayVsComputerDialogOpen(true)}
+                  />
+                )}
 
-            <Button
-              value="Toggle analysis (A)"
-              onClick={() =>
-                setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled)
-              }
-            />
+                <div className="w-4" />
 
-            <div className="w-4" />
-
-            {threatsModeEnabled ? (
-              <Button
-                value="Show threats (X)"
-                className="bg-red-600 hover:bg-red-800"
-                onClick={() => toggleThreatsMode()}
-              />
-            ) : (
-              <Button
-                value="Show threats (X)"
-                onClick={() => toggleThreatsMode()}
-              />
-            )}
-          </div>
-
-          <div className="h-8" />
-
-          <FenLoader
-            fen={inputFen}
-            onChange={(fen) => setInputFen(fen)}
-            onLoad={(fen) => {
-              game.current.load(fen);
-
-              analyzeGame();
-            }}
-          />
-
-          <div className="h-6" />
-
-          <PgnLoader
-            pgn={inputPgn}
-            onChange={(pgn) => setInputPgn(pgn)}
-            onLoad={(pgn) => {
-              game.current.loadPgn(pgn);
-
-              analyzeGame();
-            }}
-          />
-        </div>
-
-        <div className="w-8"></div>
-
-        {clientWidth >= 1100 && (
-          <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
-            {analysisEnabled && (
-              <>
-                <ChessLines
-                  startingFen={threatsModeEnabled ? threatsGame.fen() : uiFen}
-                  lines={bestLines}
-                  onMovesSelected={(moves) =>
-                    executeMoves(moves.map((move) => move.lan))
+                <Button
+                  value="Toggle analysis (A)"
+                  onClick={() =>
+                    setAnalysisEnabled(
+                      (oldAnalysisEnabled) => !oldAnalysisEnabled
+                    )
                   }
                 />
 
-                <div className="h-4"></div>
-              </>
-            )}
+                <div className="w-4" />
 
-            <GameHistory
-              startingFen={startingFen}
-              moveIndex={moveIndex + customMoveIndex}
-              numCustomMoves={customMoves.length}
-              moves={allMoves}
-              onMoveSelected={(moveIndex) => goToMove(moveIndex)}
-            />
-          </div>
-        )}
-      </div>
+                {threatsModeEnabled ? (
+                  <Button
+                    value="Show threats (X)"
+                    className="bg-red-600 hover:bg-red-800"
+                    onClick={() => toggleThreatsMode()}
+                  />
+                ) : (
+                  <Button
+                    value="Show threats (X)"
+                    onClick={() => toggleThreatsMode()}
+                  />
+                )}
+              </div>
 
-      <div className="h-8"></div>
+              <div className="h-8" />
 
-      {clientWidth < 1100 && (
-        <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
-          {analysisEnabled && (
-            <>
-              <ChessLines
-                startingFen={threatsModeEnabled ? threatsGame.fen() : uiFen}
-                lines={bestLines}
-                onMovesSelected={(moves) =>
-                  executeMoves(moves.map((move) => move.lan))
-                }
+              <FenLoader
+                fen={inputFen}
+                onChange={(fen) => setInputFen(fen)}
+                onLoad={(fen) => {
+                  game.current.load(fen);
+
+                  analyzeGame();
+                }}
               />
 
-              <div className="h-4"></div>
-            </>
+              <div className="h-6" />
+
+              <PgnLoader
+                pgn={inputPgn}
+                onChange={(pgn) => setInputPgn(pgn)}
+                onLoad={(pgn) => {
+                  game.current.loadPgn(pgn);
+
+                  analyzeGame();
+                }}
+              />
+            </div>
+
+            <div className="w-8"></div>
+
+            {clientWidth >= 1100 && (
+              <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
+                {analysisEnabled && (
+                  <>
+                    <ChessLines
+                      startingFen={
+                        threatsModeEnabled ? threatsGame.fen() : uiFen
+                      }
+                      lines={bestLines}
+                      onMovesSelected={(moves) =>
+                        executeMoves(moves.map((move) => move.lan))
+                      }
+                    />
+
+                    <div className="h-4"></div>
+                  </>
+                )}
+
+                <GameHistory
+                  startingFen={startingFen}
+                  moveIndex={moveIndex + customMoveIndex}
+                  numCustomMoves={customMoves.length}
+                  moves={allMoves}
+                  onMoveSelected={(moveIndex) => goToMove(moveIndex)}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="h-8"></div>
+
+          {clientWidth < 1100 && (
+            <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
+              {analysisEnabled && (
+                <>
+                  <ChessLines
+                    startingFen={threatsModeEnabled ? threatsGame.fen() : uiFen}
+                    lines={bestLines}
+                    onMovesSelected={(moves) =>
+                      executeMoves(moves.map((move) => move.lan))
+                    }
+                  />
+
+                  <div className="h-4"></div>
+                </>
+              )}
+
+              <GameHistory
+                startingFen={startingFen}
+                moveIndex={moveIndex + customMoveIndex}
+                numCustomMoves={customMoves.length}
+                moves={allMoves}
+                onMoveSelected={(moveIndex) => goToMove(moveIndex)}
+              />
+            </div>
           )}
 
-          <GameHistory
-            startingFen={startingFen}
-            moveIndex={moveIndex + customMoveIndex}
-            numCustomMoves={customMoves.length}
-            moves={allMoves}
-            onMoveSelected={(moveIndex) => goToMove(moveIndex)}
-          />
-        </div>
-      )}
+          <div className="h-12"></div>
 
-      <div className="h-12"></div>
+          {playVsComputerDialogOpen && (
+            <PlayVsComputerDialog
+              onPlay={(config) => {
+                computerElo.current = config.computerElo;
+                computerColor.current =
+                  config.playerColor === "white" ? "black" : "white";
+                setComputerEnabled(true);
 
-      {playVsComputerDialogOpen && (
-        <PlayVsComputerDialog
-          onPlay={(config) => {
-            computerElo.current = config.computerElo;
-            computerColor.current =
-              config.playerColor === "white" ? "black" : "white";
-            setComputerEnabled(true);
+                setAnalysisEnabled(!config.hideAnalysis);
 
-            setAnalysisEnabled(!config.hideAnalysis);
+                setBoardOrientation(config.playerColor);
 
-            setBoardOrientation(config.playerColor);
-
-            if (game.current.turn() === computerColor.current[0]) {
-              void executeComputerMove();
-            }
-          }}
-          onClose={() => setPlayVsComputerDialogOpen(false)}
-        />
-      )}
-    </main>
+                if (game.current.turn() === computerColor.current[0]) {
+                  void executeComputerMove();
+                }
+              }}
+              onClose={() => setPlayVsComputerDialogOpen(false)}
+            />
+          )}
+        </main>
+      </body>
+    </html>
   );
 }
