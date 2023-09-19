@@ -128,7 +128,10 @@ export default function GameHistory(props: {
       {miniBoardVisible && (
         <div
           className="fixed p-1 bg-neutral-400"
-          style={{ left: `${miniBoardX - 64}px`, top: `${miniBoardY + 24}px` }}
+          style={{
+            left: `calc(${miniBoardX}px - 4rem)`,
+            top: `calc(${miniBoardY}px + 1.5rem)`,
+          }}
         >
           <div className="w-32 h-32">
             <Chessboard position={miniBoardFen} />

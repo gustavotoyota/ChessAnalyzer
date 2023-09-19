@@ -23,7 +23,7 @@ export default function Dialog(props: {
               />
             </div>
 
-            <div className="h-[1px] bg-white/20" />
+            <div className="h-[0.0625rem] bg-white/20" />
           </>
         )}
 
@@ -31,7 +31,7 @@ export default function Dialog(props: {
 
         {props.footer && (
           <>
-            <div className="h-[1px] bg-white/20" />
+            <div className="h-[0.0625rem] bg-white/20" />
 
             <div className="p-3 flex justify-end">{props.footer}</div>
           </>

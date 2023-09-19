@@ -7,7 +7,7 @@ import FenLoader from "@/components/fen-loader";
 import GameHistory from "@/components/game-history";
 import PgnLoader from "@/components/pgn-loader";
 import PlayVsComputerDialog from "@/components/play-vs-computer-dialog";
-import { useEvent } from "@/hooks/use-event";
+import { useEventListener } from "@/hooks/use-event";
 import useStateWithRef from "@/hooks/use-ref-with-state";
 import useValueRef from "@/hooks/use-value-ref";
 import {
@@ -52,6 +52,18 @@ export default function Home() {
     useStateWithRef(() => -1);
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
     () => []
+  );
+
+  const [clientWidth, setClientWidth] = useState(0);
+
+  useEffect(() => {
+    setClientWidth(innerWidth);
+  }, []);
+
+  useEventListener(
+    () => window,
+    "resize",
+    () => setClientWidth(innerWidth)
   );
 
   function getAllMoves() {
@@ -163,12 +175,12 @@ export default function Home() {
           to: line.moves[0].to,
 
           color: stockfishThreatsEnabled.current ? "#c00000" : "#003088",
-          width: 16 - 2 * index,
+          width: `${(16 - 2 * index) / 16}rem`,
           opacity: 0.4 - 0.05 * index,
 
           text: line.scoreText,
           textColor: stockfishThreatsEnabled.current ? "#0000b8" : "#b80000",
-          fontSize: "15",
+          fontSize: "1rem",
           fontWeight: "bold",
         });
 
@@ -199,35 +211,39 @@ export default function Home() {
     stockfish.current.postMessage("uci");
   }, []);
 
-  useEvent("keydown", (event) => {
-    if (
-      event.target instanceof HTMLElement &&
-      ((event.target.nodeName === "INPUT" &&
-        event.target.getAttribute("type") === "text") ||
-        event.target.nodeName === "TEXTAREA" ||
-        event.target.isContentEditable)
-    ) {
-      return;
-    }
+  useEventListener(
+    () => document,
+    "keydown",
+    (event) => {
+      if (
+        event.target instanceof HTMLElement &&
+        ((event.target.nodeName === "INPUT" &&
+          event.target.getAttribute("type") === "text") ||
+          event.target.nodeName === "TEXTAREA" ||
+          event.target.isContentEditable)
+      ) {
+        return;
+      }
 
-    if (event.ctrlKey && event.code === "ArrowLeft") {
-      goToBeginning();
-    } else if (event.ctrlKey && event.code === "ArrowRight") {
-      goToEnd();
-    } else if (event.code === "ArrowLeft") {
-      goBackward();
-    } else if (event.code === "ArrowRight") {
-      goForward();
-    } else if (event.code === "KeyF") {
-      flipBoard();
-    } else if (event.code === "KeyA") {
-      setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
-    } else if (event.code === "KeyR") {
-      resetBoard();
-    } else if (event.code === "KeyX") {
-      void toggleThreatsMode();
+      if (event.ctrlKey && event.code === "ArrowLeft") {
+        goToBeginning();
+      } else if (event.ctrlKey && event.code === "ArrowRight") {
+        goToEnd();
+      } else if (event.code === "ArrowLeft") {
+        goBackward();
+      } else if (event.code === "ArrowRight") {
+        goForward();
+      } else if (event.code === "KeyF") {
+        flipBoard();
+      } else if (event.code === "KeyA") {
+        setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
+      } else if (event.code === "KeyR") {
+        resetBoard();
+      } else if (event.code === "KeyX") {
+        void toggleThreatsMode();
+      }
     }
-  });
+  );
 
   function flipBoard() {
     setBoardOrientation((oldBoardOrientation) =>
@@ -541,9 +557,11 @@ export default function Home() {
   }
 
   return (
-    <main className="h-full flex items-center justify-center flex-col">
+    <main className="pt-12 flex items-center flex-col">
       <div className="flex">
-        <div className={`flex h-[500px] ${analysisEnabled ? "" : "invisible"}`}>
+        <div
+          className={`flex h-[31.25rem] ${analysisEnabled ? "" : "invisible"}`}
+        >
           <EvaluationBar
             score={bestLines.get(0) ?? { mate: false, score: 0 }}
           />
@@ -553,7 +571,7 @@ export default function Home() {
 
         <div className="flex items-center flex-col">
           <div className="flex">
-            <div className="w-[500px]">
+            <div className="w-[31.25rem]">
               <Chessboard
                 position={uiFen}
                 areArrowsAllowed={false}
@@ -689,7 +707,37 @@ export default function Home() {
 
         <div className="w-8"></div>
 
-        <div className="w-96 h-[700px] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
+        {clientWidth >= 1100 && (
+          <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
+            {analysisEnabled && (
+              <>
+                <ChessLines
+                  startingFen={threatsModeEnabled ? threatsGame.fen() : uiFen}
+                  lines={bestLines}
+                  onMovesSelected={(moves) =>
+                    executeMoves(moves.map((move) => move.lan))
+                  }
+                />
+
+                <div className="h-4"></div>
+              </>
+            )}
+
+            <GameHistory
+              startingFen={startingFen}
+              moveIndex={moveIndex + customMoveIndex}
+              numCustomMoves={customMoves.length}
+              moves={allMoves}
+              onMoveSelected={(moveIndex) => goToMove(moveIndex)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="h-8"></div>
+
+      {clientWidth < 1100 && (
+        <div className="w-96 h-[49.375rem] bg-neutral-700 p-4 text-xs text-neutral-200 flex flex-col">
           {analysisEnabled && (
             <>
               <ChessLines
@@ -712,7 +760,9 @@ export default function Home() {
             onMoveSelected={(moveIndex) => goToMove(moveIndex)}
           />
         </div>
-      </div>
+      )}
+
+      <div className="h-12"></div>
 
       {playVsComputerDialogOpen && (
         <PlayVsComputerDialog

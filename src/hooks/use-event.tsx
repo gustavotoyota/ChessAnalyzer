@@ -1,14 +1,23 @@
 import { useEffect } from "react";
 
-export function useEvent<K extends keyof DocumentEventMap>(
+export function useEventListener<K extends keyof DocumentEventMap>(
+  document: () => Document,
   type: K,
   listener: (this: Document, ev: DocumentEventMap[K]) => any
-) {
+): void;
+
+export function useEventListener<K extends keyof WindowEventMap>(
+  window: () => Window,
+  type: K,
+  listener: (this: Document, ev: WindowEventMap[K]) => any
+): void;
+
+export function useEventListener(...args: any[]) {
   useEffect(() => {
-    document.addEventListener(type, listener);
+    args[0]().addEventListener(args[1], args[2]);
 
     return () => {
-      document.removeEventListener(type, listener);
+      args[0]().removeEventListener(args[1], args[2]);
     };
   }, []);
 }
