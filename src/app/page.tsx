@@ -12,6 +12,7 @@ import useStateWithRef from "@/hooks/use-ref-with-state";
 import useValueRef from "@/hooks/use-value-ref";
 import {
   getChessMovesFromLine,
+  getGameFromMoves,
   getScoreText,
   getStartingFen,
 } from "@/misc/chess";
@@ -52,6 +53,14 @@ export default function Home() {
   const [customMoves, setCustomMoves, customMovesRef] = useStateWithRef<Move[]>(
     () => []
   );
+
+  function getAllMoves() {
+    return (
+      customMovesRef.current.length > 0
+        ? historyRef.current.slice(0, moveIndex)
+        : historyRef.current
+    ).concat(customMovesRef.current);
+  }
 
   const allMoves = useMemo(
     () =>
@@ -250,7 +259,13 @@ export default function Home() {
     setUIFen(game.current.fen());
 
     setInputFen(game.current.fen());
-    setInputPgn(game.current.pgn({ maxWidth: 30, newline: "\n" }));
+
+    setInputPgn(
+      getGameFromMoves(startingFen, getAllMoves()).pgn({
+        maxWidth: 30,
+        newline: "\n",
+      })
+    );
   }
 
   function analyzeGame() {
