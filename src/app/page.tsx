@@ -591,6 +591,7 @@ export default function Home() {
             >
               <EvaluationBar
                 score={bestLines.get(0) ?? { mate: false, score: 0 }}
+                orientation={boardOrientation}
               />
 
               <div className="w-6" />
