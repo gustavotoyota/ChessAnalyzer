@@ -769,6 +769,7 @@ export default function Home() {
                       onMovesSelected={(moves) =>
                         executeMoves(moves.map((move) => move.lan))
                       }
+                      boardOrientation={boardOrientation}
                     />
 
                     <div className="h-4"></div>
@@ -781,6 +782,7 @@ export default function Home() {
                   numCustomMoves={customMoves.length}
                   moves={allMoves}
                   onMoveSelected={(moveIndex) => goToMove(moveIndex)}
+                  boardOrientation={boardOrientation}
                 />
               </div>
             )}
@@ -798,6 +800,7 @@ export default function Home() {
                     onMovesSelected={(moves) =>
                       executeMoves(moves.map((move) => move.lan))
                     }
+                    boardOrientation={boardOrientation}
                   />
 
                   <div className="h-4"></div>
@@ -810,6 +813,7 @@ export default function Home() {
                 numCustomMoves={customMoves.length}
                 moves={allMoves}
                 onMoveSelected={(moveIndex) => goToMove(moveIndex)}
+                boardOrientation={boardOrientation}
               />
             </div>
           )}

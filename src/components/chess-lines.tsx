@@ -1,5 +1,6 @@
 import { ChessLine, MoveScore } from "@/misc/types";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
+import { BoardOrientation } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import { Chess, Move } from "chess.js";
 import { useState } from "react";
 
@@ -7,6 +8,7 @@ export default function ChessLines(props: {
   startingFen: string;
   lines: Map<number, ChessLine>;
   onMovesSelected?: (moves: Move[]) => void;
+  boardOrientation: BoardOrientation;
 }) {
   const [miniBoardX, setMiniBoardX] = useState(0);
   const [miniBoardY, setMiniBoardY] = useState(0);
@@ -94,7 +96,10 @@ export default function ChessLines(props: {
           }}
         >
           <div className="w-32 h-32">
-            <Chessboard position={miniBoardFen} />
+            <Chessboard
+              position={miniBoardFen}
+              boardOrientation={props.boardOrientation}
+            />
           </div>
         </div>
       )}
