@@ -567,7 +567,22 @@ export default function Home() {
       }}
     >
       <body className={inter.className}>
-        <main className="pt-12 flex items-center flex-col">
+        <main className="flex items-center flex-col">
+          <div className="h-6"></div>
+
+          <div className="text-white/60 text-xs">
+            Developed by{" "}
+            <a
+              href="https://gustavotoyota.dev/"
+              className="text-sky-400 hover:text-sky-300"
+              target="_blank"
+            >
+              Gustavo Toyota
+            </a>
+          </div>
+
+          <div className="h-6"></div>
+
           <div className="flex">
             <div
               className={`flex h-[31.25rem] ${
