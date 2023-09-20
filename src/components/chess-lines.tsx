@@ -22,7 +22,7 @@ export default function ChessLines(props: {
             key={i}
             className="border-b border-neutral-400 overflow-hidden overflow-ellipsis whitespace-nowrap"
           >
-            {line != null ? (
+            {line != null && (
               <>
                 <span
                   className="font-bold cursor-pointer p-1 pr-2"
@@ -44,7 +44,6 @@ export default function ChessLines(props: {
                 >
                   {line.scoreText}
                 </span>
-
                 {line.moves.map((move, i) => (
                   <div
                     key={i}
@@ -74,10 +73,11 @@ export default function ChessLines(props: {
                     {move.san}
                   </div>
                 ))}
+                &nbsp;
               </>
-            ) : (
-              <div className="inline-block p-1">&nbsp;</div>
             )}
+
+            <div className="inline-block p-1">&nbsp;</div>
           </div>
         ))}
 
