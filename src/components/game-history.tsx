@@ -68,7 +68,11 @@ export default function GameHistory(props: {
                   numCustomMoves: props.numCustomMoves,
                 }
               )}`}
-              onClick={() => props.onMoveSelected?.(i * 2)}
+              onClick={() => {
+                props.onMoveSelected?.(i * 2);
+
+                setMiniBoardVisible(false);
+              }}
               onPointerMove={(event) => {
                 setMiniBoardX(event.clientX);
                 setMiniBoardY(event.clientY);
@@ -100,7 +104,11 @@ export default function GameHistory(props: {
                   numCustomMoves: props.numCustomMoves,
                 }
               )}`}
-              onClick={() => props.onMoveSelected?.(i * 2 + 1)}
+              onClick={() => {
+                props.onMoveSelected?.(i * 2 + 1);
+
+                setMiniBoardVisible(false);
+              }}
               onPointerMove={(event) => {
                 setMiniBoardX(event.clientX);
                 setMiniBoardY(event.clientY);

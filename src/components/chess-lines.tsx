@@ -26,9 +26,11 @@ export default function ChessLines(props: {
               <>
                 <span
                   className="font-bold cursor-pointer p-1 pr-2"
-                  onClick={() =>
-                    props.onMovesSelected?.(line.moves.slice(0, 1))
-                  }
+                  onClick={() => {
+                    props.onMovesSelected?.(line.moves.slice(0, 1));
+
+                    setMiniBoardVisible(false);
+                  }}
                   onPointerMove={(event) => {
                     setMiniBoardX(event.clientX);
                     setMiniBoardY(event.clientY);
@@ -48,9 +50,11 @@ export default function ChessLines(props: {
                   <div
                     key={i}
                     className="inline-block cursor-pointer p-1 hover:bg-white/20 rounded-sm"
-                    onClick={() =>
-                      props.onMovesSelected?.(line.moves.slice(0, i + 1))
-                    }
+                    onClick={() => {
+                      props.onMovesSelected?.(line.moves.slice(0, i + 1));
+
+                      setMiniBoardVisible(false);
+                    }}
                     onPointerMove={(event) => {
                       setMiniBoardX(event.clientX);
                       setMiniBoardY(event.clientY);
