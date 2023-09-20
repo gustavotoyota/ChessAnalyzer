@@ -628,7 +628,7 @@ export default function Home() {
               <div className="h-8" />
 
               <div className="flex">
-                <Button value="Reset (R)" onClick={() => resetBoard()} />
+                <Button value="Reset board (R)" onClick={() => resetBoard()} />
 
                 <div className="w-4" />
 
@@ -648,7 +648,7 @@ export default function Home() {
 
                 <div className="w-4" />
 
-                <Button value="Flip (F)" onClick={() => flipBoard()} />
+                <Button value="Flip board (F)" onClick={() => flipBoard()} />
               </div>
 
               <div className="h-4" />
@@ -669,20 +669,31 @@ export default function Home() {
 
                 <div className="w-4" />
 
-                <Button
-                  value="Toggle analysis (A)"
-                  onClick={() =>
-                    setAnalysisEnabled(
-                      (oldAnalysisEnabled) => !oldAnalysisEnabled
-                    )
-                  }
-                />
+                {analysisEnabled ? (
+                  <Button
+                    value="Hide analysis (A)"
+                    onClick={() =>
+                      setAnalysisEnabled(
+                        (oldAnalysisEnabled) => !oldAnalysisEnabled
+                      )
+                    }
+                  />
+                ) : (
+                  <Button
+                    value="Show analysis (A)"
+                    onClick={() =>
+                      setAnalysisEnabled(
+                        (oldAnalysisEnabled) => !oldAnalysisEnabled
+                      )
+                    }
+                  />
+                )}
 
                 <div className="w-4" />
 
                 {threatsModeEnabled ? (
                   <Button
-                    value="Show threats (X)"
+                    value="Hide threats (X)"
                     className="bg-red-600 hover:bg-red-800"
                     onClick={() => toggleThreatsMode()}
                   />
