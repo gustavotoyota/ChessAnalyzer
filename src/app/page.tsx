@@ -568,7 +568,7 @@ export default function Home() {
     >
       <body className={inter.className}>
         <main className="flex items-center flex-col">
-          <div className="h-6"></div>
+          <div className="h-4"></div>
 
           <div className="text-white/60 text-xs">
             Developed by{" "}
@@ -580,8 +580,17 @@ export default function Home() {
               Gustavo Toyota
             </a>
           </div>
+          <div className="text-white/60 text-xs">
+            <a
+              href="https://github.com/gustavotoyota/ChessAnalyzer"
+              className="text-sky-400 hover:text-sky-300"
+              target="_blank"
+            >
+              https://github.com/gustavotoyota/ChessAnalyzer
+            </a>
+          </div>
 
-          <div className="h-6"></div>
+          <div className="h-4"></div>
 
           <div className="flex">
             <div
