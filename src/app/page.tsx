@@ -1,5 +1,11 @@
 "use client";
 
+import { Chessboard } from "@gustavotoyota/react-chessboard";
+import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
+import { Chess, Move, Square } from "chess.js";
+import { Inter } from "next/font/google";
+import { useEffect, useMemo, useState } from "react";
+
 import Button from "@/components/button";
 import ChessLines from "@/components/chess-lines";
 import EvaluationBar from "@/components/evaluation-bar";
@@ -17,11 +23,6 @@ import {
   getStartingFen,
 } from "@/misc/chess";
 import { ChessLine } from "@/misc/types";
-import { Chessboard } from "@gustavotoyota/react-chessboard";
-import { Arrow } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
-import { Chess, Move, Square } from "chess.js";
-import { Inter } from "next/font/google";
-import { useEffect, useMemo, useState } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 

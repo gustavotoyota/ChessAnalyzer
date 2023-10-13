@@ -48,13 +48,16 @@ export default function GameHistory(props: {
   return (
     <div className="flex-1 h-0 overflow-auto">
       {props.moves
-        .reduce((acc, value, index, array) => {
-          if (index % 2 === 0) {
-            acc.push([value, array[index + 1]]);
-          }
+        .reduce(
+          (acc, value, index, array) => {
+            if (index % 2 === 0) {
+              acc.push([value, array[index + 1]]);
+            }
 
-          return acc;
-        }, [] as [Move, Move][])
+            return acc;
+          },
+          [] as [Move, Move][]
+        )
         .map(([whiteMove, blackMove], i) => (
           <div key={i} className="flex items-center">
             <div className="w-6">{i + 1}.</div>

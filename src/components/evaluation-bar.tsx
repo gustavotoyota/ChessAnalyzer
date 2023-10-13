@@ -1,6 +1,7 @@
-import { MoveScore } from "@/misc/types";
-import { getScoreText, getSmoothScore } from "@/misc/chess";
 import { BoardOrientation } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
+
+import { getScoreText, getSmoothScore } from "@/misc/chess";
+import { MoveScore } from "@/misc/types";
 
 export default function EvaluationBar(props: {
   score: MoveScore;

@@ -1,8 +1,9 @@
-import { ChessLine, MoveScore } from "@/misc/types";
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { BoardOrientation } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
 import { Chess, Move } from "chess.js";
 import { useState } from "react";
+
+import { ChessLine } from "@/misc/types";
 
 export default function ChessLines(props: {
   startingFen: string;
