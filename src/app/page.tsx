@@ -10,6 +10,8 @@ import EvaluationBar from "@/components/evaluation-bar";
 import FenLoadingUI from "@/components/fen-loading-ui";
 import GameHistoryUI from "@/components/game-history-ui";
 import PgnLoadingUI from "@/components/pgn-loading-ui";
+import PlayVsComputer from "@/components/play-vs-computer";
+import { getArrowsFromBestLines } from "@/core/arrows";
 import { useBoardOrientation } from "@/hooks/use-board-orientation";
 import useChessGame from "@/hooks/use-chess-game";
 import useInnerWidth from "@/hooks/use-client-width";
@@ -25,15 +27,13 @@ export default function Home() {
 
   const chessGame = useChessGame();
 
-  const { stockfishWrapper, bestLines } = useStockfishWrapper({
-    realGame: chessGame,
-  });
+  const { stockfishWrapper, bestLines } = useStockfishWrapper();
 
   useOnEvent(
     () => chessGame,
     "update",
     () => {
-      stockfishWrapper.current.goDepth(chessGame.fen, 15);
+      stockfishWrapper.current.goDepth(chessGame.fen, 20);
     }
   );
 
@@ -97,6 +97,11 @@ export default function Home() {
                   <ChessboardUI
                     game={chessGame}
                     boardOrientation={boardOrientation}
+                    arrows={
+                      analysisEnabled
+                        ? getArrowsFromBestLines({ bestLines })
+                        : []
+                    }
                   />
                 </div>
               </div>
@@ -133,18 +138,10 @@ export default function Home() {
               <div className="h-4" />
 
               <div className="flex">
-                {/* {computerEnabled ? (
-                  <Button
-                    value="Play vs. computer"
-                    className="bg-red-600 hover:bg-red-800"
-                    onClick={() => setComputerEnabled(false)}
-                  />
-                ) : (
-                  <Button
-                    value="Play vs. computer"
-                    onClick={() => setPlayVsComputerDialogOpen(true)}
-                  />
-                )} */}
+                <PlayVsComputer
+                  game={chessGame}
+                  stockfishWrapper={stockfishWrapper.current}
+                />
 
                 <div className="w-4" />
 

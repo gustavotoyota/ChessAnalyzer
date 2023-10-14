@@ -1,33 +1,64 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ChessGame } from "@/core/chess-game";
+import { StockfishWrapper } from "@/core/stockfish-wrapper";
+import { useOnEvent } from "@/hooks/use-on-event";
+import useStateWithRef from "@/hooks/use-ref-with-state";
 
 import Button from "./button";
 import Dialog from "./dialog";
 
-export default function PlayVsComputerDialog(props: { game: ChessGame }) {
+export default function PlayVsComputer(props: {
+  game: ChessGame;
+  stockfishWrapper: StockfishWrapper;
+}) {
   const [playVsComputerDialogOpen, setPlayVsComputerDialogOpen] =
     useState(false);
 
-  const [playVsComputerEnabled, setPlayVsComputerEnabled] = useState(false);
+  const [
+    playVsComputerEnabled,
+    setPlayVsComputerEnabled,
+    playVsComputerEnabledRef,
+  ] = useStateWithRef(() => false);
 
-  const [elo, setElo] = useState(1320);
+  const [elo, setElo, eloRef] = useStateWithRef(() => 1320);
 
-  const [color, setColor] = useState<"white" | "black">("white");
+  const [color, setColor, colorRef] = useStateWithRef<"white" | "black">(
+    () => "white"
+  );
 
   const [hideAnalysis, setHideAnalysis] = useState(true);
 
-  const moveListener = () => {
-    // Execute computer move
-  };
+  useOnEvent(
+    () => props.game,
+    "move",
+    async () => {
+      if (
+        !playVsComputerEnabledRef.current ||
+        props.game.turn === colorRef.current[0]
+      ) {
+        return;
+      }
 
-  useEffect(() => {
-    props.game.on("move", moveListener);
+      props.stockfishWrapper.stop();
 
-    return () => {
-      props.game.off("move", moveListener);
-    };
-  }, []);
+      props.stockfishWrapper.limitStrength(true, eloRef.current);
+      props.stockfishWrapper.setNumLines(1);
+
+      await props.stockfishWrapper.waitReady();
+
+      props.stockfishWrapper.goDepth(props.game.fen, 20);
+
+      const move = await props.stockfishWrapper.waitBestMove();
+
+      props.stockfishWrapper.limitStrength(false);
+      props.stockfishWrapper.setNumLines(5);
+
+      await props.stockfishWrapper.waitReady();
+
+      props.game.executeMoves([move]);
+    }
+  );
 
   return (
     <>

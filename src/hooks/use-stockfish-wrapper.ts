@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { ChessGame } from "@/core/chess-game";
 import { StockfishWrapper } from "@/core/stockfish-wrapper";
 import { ChessLine } from "@/core/types";
 
 import useValueRef from "./use-value-ref";
 
-export default function useStockfishWrapper(props: { realGame: ChessGame }) {
-  const stockfishWrapper = useValueRef(
-    () => new StockfishWrapper({ realGame: props.realGame })
-  );
+export default function useStockfishWrapper() {
+  const stockfishWrapper = useValueRef(() => new StockfishWrapper());
 
   const [bestLines, setBestLines] = useState<Map<number, ChessLine>>(new Map());
 
@@ -26,6 +23,8 @@ export default function useStockfishWrapper(props: { realGame: ChessGame }) {
 
     return () => {
       stockfishWrapper.current.off("best-lines", _onUpdate);
+
+      stockfish.terminate();
     };
   }, []);
 

@@ -119,7 +119,7 @@ export class ChessGame {
       this._emit("update");
     }
   }
-  private _goBackward() {
+  private _goBackward(): boolean {
     if (this._customMoveIndex >= 0) {
       --this._customMoveIndex;
 
@@ -130,17 +130,19 @@ export class ChessGame {
     } else if (this._moveIndex >= 0) {
       --this._moveIndex;
     } else {
-      return;
+      return false;
     }
 
     this._game.undo();
+
+    return true;
   }
   goBackward() {
-    this._goBackward();
-
-    this._emit("update");
+    if (this._goBackward()) {
+      this._emit("update");
+    }
   }
-  private _goForward() {
+  private _goForward(): boolean {
     if (
       this._customMoveHistory.length > 0 &&
       this._customMoveIndex < this._customMoveHistory.length - 1
@@ -153,13 +155,15 @@ export class ChessGame {
 
       this._game.move(this._moveHistory[this._moveIndex]);
     } else {
-      return;
+      return false;
     }
+
+    return true;
   }
   goForward() {
-    this._goForward();
-
-    this._emit("update");
+    if (this._goForward()) {
+      this._emit("update");
+    }
   }
   goToEnd() {
     let executed = false;

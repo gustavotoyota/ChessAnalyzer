@@ -1,4 +1,5 @@
-import { ChessGame } from "./chess-game";
+import { Chess } from "chess.js";
+
 import { ChessLine } from "./types";
 import { getChessMovesFromLine, getScoreText } from "./utils";
 
@@ -7,9 +8,6 @@ export type StockfishEventType = "best-lines" | "best-move";
 export class StockfishWrapper {
   private _stockfish!: Worker;
 
-  private _realGame: ChessGame;
-  private _stockfishGame: ChessGame;
-
   private _listeners = new Map<
     StockfishEventType,
     Set<(...args: any[]) => any>
@@ -17,10 +15,8 @@ export class StockfishWrapper {
 
   private _bestLines = new Map<number, ChessLine>();
 
-  constructor(input: { realGame: ChessGame }) {
-    this._realGame = input.realGame;
-    this._stockfishGame = new ChessGame();
-  }
+  private _nextGame = new Chess();
+  private _currentGame = new Chess();
 
   init(input: { stockfish: Worker }) {
     this._stockfish = input.stockfish;
@@ -37,7 +33,7 @@ export class StockfishWrapper {
     this._stockfish.postMessage("setoption name Hash value 128");
     this._stockfish.postMessage("setoption name MultiPV value 5");
 
-    this.goDepth(this._realGame.fen, 15);
+    this.goDepth(this._currentGame.fen(), 20);
   }
 
   get bestLines() {
@@ -59,7 +55,7 @@ export class StockfishWrapper {
         (info[3] === "seldepth" && lineDepth === "1" && lineId === "1") ||
         info[4] === "mate"
       ) {
-        this._stockfishGame = new ChessGame(this._realGame.fen);
+        this._currentGame = this._nextGame;
 
         this._bestLines = new Map();
       }
@@ -82,7 +78,7 @@ export class StockfishWrapper {
 
       let lineScore = parseInt(info[scoreIndex + 2]);
 
-      if (this._stockfishGame.turn === "b") {
+      if (this._currentGame.turn() === "b") {
         lineScore = -lineScore;
       }
 
@@ -91,7 +87,7 @@ export class StockfishWrapper {
       const scoreText = getScoreText({ mate, score: lineScore });
 
       this._bestLines.set(lineId - 1, {
-        moves: getChessMovesFromLine(this._stockfishGame.game, lineMoves),
+        moves: getChessMovesFromLine(this._currentGame, lineMoves),
         mate: mate,
         score: lineScore,
         scoreText: scoreText,
@@ -101,13 +97,66 @@ export class StockfishWrapper {
     }
   };
 
+  limitStrength(limit: boolean, elo?: number) {
+    this._stockfish.postMessage(
+      `setoption name UCI_LimitStrength value ${limit ? "true" : "false"}}`
+    );
+
+    if (elo !== undefined) {
+      this._stockfish.postMessage(`setoption name UCI_Elo value ${elo}`);
+    }
+  }
+  setNumLines(numLines: number) {
+    this._stockfish.postMessage(`setoption name MultiPV value ${numLines}`);
+  }
+
   goDepth(fen: string, depth: number) {
+    this._nextGame = new Chess(fen);
+
+    this._stockfish.postMessage("stop");
     this._stockfish.postMessage(`position fen ${fen}`);
     this._stockfish.postMessage(`go depth ${depth}`);
   }
   goTime(fen: string, time: number) {
+    this._nextGame = new Chess(fen);
+
+    this._stockfish.postMessage("stop");
     this._stockfish.postMessage(`position fen ${fen}`);
     this._stockfish.postMessage(`go movetime ${time}`);
+  }
+
+  stop() {
+    this._stockfish.postMessage("stop");
+  }
+
+  async waitMessage(filter: (message: string) => any): Promise<any> {
+    return new Promise((resolve) => {
+      const listener = (event: MessageEvent<any>) => {
+        const result = filter(event.data);
+
+        if (!result) {
+          return;
+        }
+
+        resolve(result);
+
+        this._stockfish.removeEventListener("message", listener);
+      };
+
+      this._stockfish.addEventListener("message", listener);
+    });
+  }
+  async waitReady() {
+    this._stockfish.postMessage("isready");
+
+    await this.waitMessage((message) => message === "readyok");
+  }
+  async waitBestMove(): Promise<string> {
+    return await this.waitMessage((message) => {
+      if (message.startsWith("bestmove")) {
+        return message.split(" ")[1];
+      }
+    });
   }
 
   on(event: StockfishEventType, listener: (...args: any[]) => void) {
