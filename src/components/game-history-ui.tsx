@@ -1,21 +1,23 @@
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { BoardOrientation } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
-import { Chess, Move } from "chess.js";
+import { Move } from "chess.js";
 import { useState } from "react";
 
-function getMoveColor(params: {
+import { ChessGame } from "@/core/chess-game";
+
+function _getMoveColor(params: {
   activeMoveIndex: number;
   renderMoveIndex: number;
-  numMoves: number;
+  numTotalMoves: number;
   numCustomMoves: number;
 }) {
-  if (params.renderMoveIndex >= params.numMoves) {
+  if (params.renderMoveIndex >= params.numTotalMoves) {
     return "";
   }
 
   const isActive = params.activeMoveIndex === params.renderMoveIndex;
   const isCustomMove =
-    params.renderMoveIndex >= params.numMoves - params.numCustomMoves;
+    params.renderMoveIndex >= params.numTotalMoves - params.numCustomMoves;
 
   if (isActive) {
     if (isCustomMove) {
@@ -32,22 +34,19 @@ function getMoveColor(params: {
   }
 }
 
-export default function GameHistory(props: {
-  startingFen: string;
-  moveIndex: number;
-  numCustomMoves: number;
-  moves: Move[];
-  onMoveSelected?: (moveIndex: number) => void;
+export default function GameHistoryUI(props: {
+  game: ChessGame;
   boardOrientation: BoardOrientation;
 }) {
   const [miniBoardX, setMiniBoardX] = useState(0);
   const [miniBoardY, setMiniBoardY] = useState(0);
   const [miniBoardVisible, setMiniBoardVisible] = useState(false);
-  const [miniBoardFen, setMiniBoardFen] = useState(props.startingFen);
+  const [miniBoardFen, setMiniBoardFen] = useState(props.game.startingFen);
 
   return (
     <div className="flex-1 h-0 overflow-auto">
-      {props.moves
+      {props.game.moveHistory
+        .concat(props.game.customMoveHistory)
         .reduce(
           (acc, value, index, array) => {
             if (index % 2 === 0) {
@@ -65,16 +64,16 @@ export default function GameHistory(props: {
             <div className="w-2"></div>
 
             <div
-              className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${getMoveColor(
+              className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${_getMoveColor(
                 {
-                  activeMoveIndex: props.moveIndex,
+                  activeMoveIndex: props.game.finalMoveIndex,
                   renderMoveIndex: i * 2,
-                  numMoves: props.moves.length,
-                  numCustomMoves: props.numCustomMoves,
+                  numTotalMoves: props.game.finalMoveHistory.length,
+                  numCustomMoves: props.game.customMoveHistory.length,
                 }
               )}`}
               onClick={() => {
-                props.onMoveSelected?.(i * 2);
+                props.game.goToMove(i * 2);
 
                 setMiniBoardVisible(false);
               }}
@@ -83,17 +82,9 @@ export default function GameHistory(props: {
                 setMiniBoardY(event.clientY);
               }}
               onPointerEnter={() => {
-                try {
-                  const game = new Chess(props.startingFen);
+                setMiniBoardFen(props.game.finalFenHistory[i * 2]);
 
-                  for (let j = 0; j < i * 2 + 1; j++) {
-                    game.move(props.moves[j]);
-                  }
-
-                  setMiniBoardFen(game.fen());
-
-                  setMiniBoardVisible(true);
-                } catch {}
+                setMiniBoardVisible(true);
               }}
               onPointerLeave={() => setMiniBoardVisible(false)}
             >
@@ -101,16 +92,16 @@ export default function GameHistory(props: {
             </div>
 
             <div
-              className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${getMoveColor(
+              className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${_getMoveColor(
                 {
-                  activeMoveIndex: props.moveIndex,
+                  activeMoveIndex: props.game.finalMoveIndex,
                   renderMoveIndex: i * 2 + 1,
-                  numMoves: props.moves.length,
-                  numCustomMoves: props.numCustomMoves,
+                  numTotalMoves: props.game.finalMoveHistory.length,
+                  numCustomMoves: props.game.customMoveHistory.length,
                 }
               )}`}
               onClick={() => {
-                props.onMoveSelected?.(i * 2 + 1);
+                props.game.goToMove(i * 2 + 1);
 
                 setMiniBoardVisible(false);
               }}
@@ -119,17 +110,9 @@ export default function GameHistory(props: {
                 setMiniBoardY(event.clientY);
               }}
               onPointerEnter={() => {
-                try {
-                  const game = new Chess(props.startingFen);
+                setMiniBoardFen(props.game.finalFenHistory[i * 2 + 1]);
 
-                  for (let j = 0; j < i * 2 + 2; j++) {
-                    game.move(props.moves[j]);
-                  }
-
-                  setMiniBoardFen(game.fen());
-
-                  setMiniBoardVisible(true);
-                } catch {}
+                setMiniBoardVisible(true);
               }}
               onPointerLeave={() => setMiniBoardVisible(false)}
             >

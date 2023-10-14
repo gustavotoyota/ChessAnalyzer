@@ -1,20 +1,20 @@
 import { Chessboard } from "@gustavotoyota/react-chessboard";
 import { BoardOrientation } from "@gustavotoyota/react-chessboard/dist/chessboard/types";
-import { Chess, Move } from "chess.js";
+import { Chess } from "chess.js";
 import { useState } from "react";
 
-import { ChessLine } from "@/misc/types";
+import { ChessGame } from "@/core/chess-game";
+import { ChessLine } from "@/core/types";
 
 export default function ChessLines(props: {
-  startingFen: string;
+  game: ChessGame;
   lines: Map<number, ChessLine>;
-  onMovesSelected?: (moves: Move[]) => void;
   boardOrientation: BoardOrientation;
 }) {
   const [miniBoardX, setMiniBoardX] = useState(0);
   const [miniBoardY, setMiniBoardY] = useState(0);
   const [miniBoardVisible, setMiniBoardVisible] = useState(false);
-  const [miniBoardFen, setMiniBoardFen] = useState(props.startingFen);
+  const [miniBoardFen, setMiniBoardFen] = useState(props.game.fen);
 
   return (
     <>
@@ -30,7 +30,7 @@ export default function ChessLines(props: {
                 <span
                   className="font-bold cursor-pointer p-1 pr-2"
                   onClick={() => {
-                    props.onMovesSelected?.(line.moves.slice(0, 1));
+                    props.game.executeMoves(line.moves.slice(0, 1));
 
                     setMiniBoardVisible(false);
                   }}
@@ -40,7 +40,7 @@ export default function ChessLines(props: {
                   }}
                   onPointerEnter={() => {
                     try {
-                      setMiniBoardFen(props.startingFen);
+                      setMiniBoardFen(props.game.fen);
 
                       setMiniBoardVisible(true);
                     } catch {}
@@ -54,7 +54,7 @@ export default function ChessLines(props: {
                     key={i}
                     className="inline-block cursor-pointer p-1 hover:bg-white/20 rounded-sm"
                     onClick={() => {
-                      props.onMovesSelected?.(line.moves.slice(0, i + 1));
+                      props.game.executeMoves(line.moves.slice(0, i + 1));
 
                       setMiniBoardVisible(false);
                     }}
@@ -64,7 +64,7 @@ export default function ChessLines(props: {
                     }}
                     onPointerEnter={() => {
                       try {
-                        const game = new Chess(props.startingFen);
+                        const game = new Chess(props.game.fen);
 
                         for (let j = 0; j < i + 1; j++) {
                           game.move(line.moves[j]);

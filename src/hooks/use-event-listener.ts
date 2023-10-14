@@ -12,12 +12,16 @@ export function useEventListener<K extends keyof WindowEventMap>(
   listener: (this: Document, ev: WindowEventMap[K]) => any
 ): void;
 
-export function useEventListener(...args: any[]) {
+export function useEventListener(
+  target: () => any,
+  type: string,
+  listener: (...args: any[]) => any
+) {
   useEffect(() => {
-    args[0]().addEventListener(args[1], args[2]);
+    target().addEventListener(type, listener);
 
     return () => {
-      args[0]().removeEventListener(args[1], args[2]);
+      target().removeEventListener(type, listener);
     };
   }, []);
 }

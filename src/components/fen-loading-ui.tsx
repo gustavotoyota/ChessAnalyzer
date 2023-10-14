@@ -1,10 +1,17 @@
+import { useEffect, useState } from "react";
+
 import Button from "./button";
 
-export default function FenLoader(props: {
+export default function FenLoadingUI(props: {
   fen: string;
-  onChange: (fen: string) => void;
   onLoad: (pgn: string) => void;
 }) {
+  const [inputFen, setInputFen] = useState(() => props.fen);
+
+  useEffect(() => {
+    setInputFen(props.fen);
+  }, [props.fen]);
+
   return (
     <div className="flex">
       <input
@@ -12,12 +19,12 @@ export default function FenLoader(props: {
         placeholder="Paste FEN here"
         type="text"
         value={props.fen}
-        onChange={(event) => props.onChange(event.target.value)}
+        onChange={(event) => setInputFen(event.target.value)}
       />
 
       <div className="w-4" />
 
-      <Button value="Import FEN" onClick={() => props.onLoad(props.fen)} />
+      <Button value="Import FEN" onClick={() => props.onLoad(inputFen)} />
     </div>
   );
 }
