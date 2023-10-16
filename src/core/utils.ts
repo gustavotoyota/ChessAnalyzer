@@ -17,14 +17,18 @@ export function getSmoothScore(score: MoveScore) {
 export function getGameFromMoves(
   startingFen: string,
   moves: (Move | string)[]
-): Chess {
-  const game = new Chess(startingFen);
+): Chess | null {
+  try {
+    const game = new Chess(startingFen);
 
-  for (const move of moves) {
-    game.move(move);
+    for (const move of moves) {
+      game.move(move);
+    }
+
+    return game;
+  } catch {
+    return null;
   }
-
-  return game;
 }
 
 export function getChessMovesFromLine(game: Chess, lans: string[]): Move[] {
@@ -94,4 +98,14 @@ export function checkPromotion(
       (piece === "bP" && sourceSquare[1] === "2" && targetSquare[1] === "1")) &&
     Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1
   );
+}
+
+export function getFlippedFen(fen: string): string {
+  const flippedFenParts = fen.split(" ");
+
+  flippedFenParts[1] = flippedFenParts[1] === "w" ? "b" : "w";
+
+  const flippedFen = flippedFenParts.join(" ");
+
+  return flippedFen;
 }

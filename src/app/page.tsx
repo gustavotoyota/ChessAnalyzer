@@ -11,10 +11,12 @@ import FenLoadingUI from "@/components/fen-loading-ui";
 import GameHistoryUI from "@/components/game-history-ui";
 import PgnLoadingUI from "@/components/pgn-loading-ui";
 import PlayVsComputer from "@/components/play-vs-computer";
+import ThreatsMode from "@/components/threats-mode";
 import { getArrowsFromBestLines } from "@/core/arrows";
 import { useBoardOrientation } from "@/hooks/use-board-orientation";
 import useChessGame from "@/hooks/use-chess-game";
 import useInnerWidth from "@/hooks/use-client-width";
+import { useEventListener } from "@/hooks/use-event-listener";
 import { useOnEvent } from "@/hooks/use-on-event";
 import useStockfishWrapper from "@/hooks/use-stockfish-wrapper";
 
@@ -38,6 +40,42 @@ export default function Home() {
   );
 
   const { boardOrientation, flipBoard } = useBoardOrientation();
+
+  const [threatsModeEnabled, setThreatsModeEnabled] = useState(false);
+
+  useEventListener(
+    () => document,
+    "keydown",
+    (event) => {
+      if (
+        event.target instanceof HTMLElement &&
+        ((event.target.nodeName === "INPUT" &&
+          event.target.getAttribute("type") === "text") ||
+          event.target.nodeName === "TEXTAREA" ||
+          event.target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (event.ctrlKey && event.code === "ArrowLeft") {
+        chessGame.goToStart();
+      } else if (event.ctrlKey && event.code === "ArrowRight") {
+        chessGame.goToEnd();
+      } else if (event.code === "ArrowLeft") {
+        chessGame.goBackward();
+      } else if (event.code === "ArrowRight") {
+        chessGame.goForward();
+      } else if (event.code === "KeyF") {
+        flipBoard();
+      } else if (event.code === "KeyA") {
+        setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
+      } else if (event.code === "KeyR") {
+        chessGame.reset();
+      } else if (event.code === "KeyX") {
+        setThreatsModeEnabled((oldValue) => !oldValue);
+      }
+    }
+  );
 
   return (
     <html
@@ -99,7 +137,10 @@ export default function Home() {
                     boardOrientation={boardOrientation}
                     arrows={
                       analysisEnabled
-                        ? getArrowsFromBestLines({ bestLines })
+                        ? getArrowsFromBestLines({
+                            bestLines,
+                            threatsModeEnabled,
+                          })
                         : []
                     }
                   />
@@ -141,6 +182,7 @@ export default function Home() {
                 <PlayVsComputer
                   game={chessGame}
                   stockfishWrapper={stockfishWrapper.current}
+                  setAnalysisEnabled={setAnalysisEnabled}
                 />
 
                 <div className="w-4" />
@@ -167,18 +209,12 @@ export default function Home() {
 
                 <div className="w-4" />
 
-                {/* {threatsModeEnabled ? (
-                  <Button
-                    value="Hide threats (X)"
-                    className="bg-red-600 hover:bg-red-800"
-                    onClick={() => toggleThreatsMode()}
-                  />
-                ) : (
-                  <Button
-                    value="Show threats (X)"
-                    onClick={() => toggleThreatsMode()}
-                  />
-                )} */}
+                <ThreatsMode
+                  game={chessGame}
+                  stockfishWrapper={stockfishWrapper.current}
+                  threatsModeEnabled={threatsModeEnabled}
+                  setThreatsModeEnabled={setThreatsModeEnabled}
+                />
               </div>
 
               <div className="h-8" />

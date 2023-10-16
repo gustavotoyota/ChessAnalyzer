@@ -11,6 +11,9 @@ import Dialog from "./dialog";
 export default function PlayVsComputer(props: {
   game: ChessGame;
   stockfishWrapper: StockfishWrapper;
+  setAnalysisEnabled: (
+    value: boolean | ((oldValue: boolean) => boolean)
+  ) => void;
 }) {
   const [playVsComputerDialogOpen, setPlayVsComputerDialogOpen] =
     useState(false);
@@ -47,7 +50,7 @@ export default function PlayVsComputer(props: {
 
       await props.stockfishWrapper.waitReady();
 
-      props.stockfishWrapper.goDepth(props.game.fen, 20);
+      props.stockfishWrapper.goTime(props.game.fen, 2000);
 
       const move = await props.stockfishWrapper.waitBestMove();
 
@@ -159,6 +162,10 @@ export default function PlayVsComputer(props: {
               <Button
                 value="Play"
                 onClick={() => {
+                  if (hideAnalysis) {
+                    props.setAnalysisEnabled(false);
+                  }
+
                   setPlayVsComputerEnabled(true);
 
                   setPlayVsComputerDialogOpen(false);

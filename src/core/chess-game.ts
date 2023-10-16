@@ -72,10 +72,12 @@ export class ChessGame {
   }
 
   get finalPgn() {
-    return getGameFromMoves(this._startingFen, this.finalMoveHistory).pgn({
-      maxWidth: 30,
-      newline: "\n",
-    });
+    return (
+      getGameFromMoves(this._startingFen, this.finalMoveHistory)?.pgn({
+        maxWidth: 30,
+        newline: "\n",
+      }) ?? ""
+    );
   }
 
   get turn() {
