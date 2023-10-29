@@ -19,11 +19,25 @@ export class ChessGame {
 
   private _listeners = new Map<string, Set<(...args: any[]) => void>>();
 
-  constructor(game?: Chess | string) {
-    this._game =
-      typeof game === "string" ? new Chess(game) : game ?? new Chess();
+  constructor(game?: Chess | string | ChessGame) {
+    if (game instanceof ChessGame) {
+      this._game = new Chess(game.fen);
 
-    this._startingFen = this._game.fen();
+      this._startingFen = game.startingFen;
+
+      this._moveHistory = game.moveHistory;
+      this._fenHistory = game.fenHistory;
+      this._moveIndex = game.moveIndex;
+
+      this._customMoveHistory = game.customMoveHistory;
+      this._customFenHistory = game.customFenHistory;
+      this._customMoveIndex = game.customMoveIndex;
+    } else {
+      this._game =
+        typeof game === "string" ? new Chess(game) : game ?? new Chess();
+
+      this._startingFen = this._game.fen();
+    }
   }
 
   get game() {

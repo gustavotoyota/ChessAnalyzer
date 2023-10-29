@@ -27,15 +27,15 @@ export default function Home() {
 
   const [analysisEnabled, setAnalysisEnabled] = useState(true);
 
-  const chessGame = useChessGame();
+  const { gameMutable, gameState } = useChessGame();
 
   const { stockfishWrapper, bestLines } = useStockfishWrapper();
 
   useOnEvent(
-    () => chessGame,
+    () => gameMutable.current,
     "update",
     () => {
-      stockfishWrapper.current.goDepth(chessGame.fen, 20);
+      stockfishWrapper.current.goDepth(gameMutable.current.fen, 20);
     }
   );
 
@@ -58,19 +58,19 @@ export default function Home() {
       }
 
       if (event.ctrlKey && event.code === "ArrowLeft") {
-        chessGame.goToStart();
+        gameMutable.current.goToStart();
       } else if (event.ctrlKey && event.code === "ArrowRight") {
-        chessGame.goToEnd();
+        gameMutable.current.goToEnd();
       } else if (event.code === "ArrowLeft") {
-        chessGame.goBackward();
+        gameMutable.current.goBackward();
       } else if (event.code === "ArrowRight") {
-        chessGame.goForward();
+        gameMutable.current.goForward();
       } else if (event.code === "KeyF") {
         flipBoard();
       } else if (event.code === "KeyA") {
         setAnalysisEnabled((oldAnalysisEnabled) => !oldAnalysisEnabled);
       } else if (event.code === "KeyR") {
-        chessGame.reset();
+        gameMutable.current.reset();
       } else if (event.code === "KeyX") {
         setThreatsModeEnabled((oldValue) => !oldValue);
       }
@@ -133,7 +133,8 @@ export default function Home() {
               <div className="flex">
                 <div className="w-[31.25rem]">
                   <ChessboardUI
-                    game={chessGame}
+                    gameMutable={gameMutable.current}
+                    gameState={gameState}
                     boardOrientation={boardOrientation}
                     arrows={
                       analysisEnabled
@@ -152,24 +153,36 @@ export default function Home() {
               <div className="flex">
                 <Button
                   value="Reset board (R)"
-                  onClick={() => chessGame.reset()}
+                  onClick={() => gameMutable.current.reset()}
                 />
 
                 <div className="w-4" />
 
-                <Button value="|<" onClick={() => chessGame.goToStart()} />
+                <Button
+                  value="|<"
+                  onClick={() => gameMutable.current.goToStart()}
+                />
 
                 <div className="w-4" />
 
-                <Button value="<" onClick={() => chessGame.goBackward()} />
+                <Button
+                  value="<"
+                  onClick={() => gameMutable.current.goBackward()}
+                />
 
                 <div className="w-2" />
 
-                <Button value=">" onClick={() => chessGame.goForward()} />
+                <Button
+                  value=">"
+                  onClick={() => gameMutable.current.goForward()}
+                />
 
                 <div className="w-4" />
 
-                <Button value=">|" onClick={() => chessGame.goToEnd()} />
+                <Button
+                  value=">|"
+                  onClick={() => gameMutable.current.goToEnd()}
+                />
 
                 <div className="w-4" />
 
@@ -180,7 +193,7 @@ export default function Home() {
 
               <div className="flex">
                 <PlayVsComputer
-                  game={chessGame}
+                  gameMutable={gameMutable.current}
                   stockfishWrapper={stockfishWrapper.current}
                   setAnalysisEnabled={setAnalysisEnabled}
                 />
@@ -210,7 +223,7 @@ export default function Home() {
                 <div className="w-4" />
 
                 <ThreatsMode
-                  game={chessGame}
+                  gameMutable={gameMutable.current}
                   stockfishWrapper={stockfishWrapper.current}
                   threatsModeEnabled={threatsModeEnabled}
                   setThreatsModeEnabled={setThreatsModeEnabled}
@@ -220,15 +233,15 @@ export default function Home() {
               <div className="h-8" />
 
               <FenLoadingUI
-                fen={chessGame.fen}
-                onLoad={(fen) => chessGame.loadFen(fen)}
+                fen={gameState.fen}
+                onLoad={(fen) => gameMutable.current.loadFen(fen)}
               />
 
               <div className="h-6" />
 
               <PgnLoadingUI
-                pgn={chessGame.finalPgn}
-                onLoad={(pgn) => chessGame.loadPgn(pgn)}
+                pgn={gameState.finalPgn}
+                onLoad={(pgn) => gameMutable.current.loadPgn(pgn)}
               />
             </div>
 
@@ -239,7 +252,8 @@ export default function Home() {
                 {analysisEnabled && (
                   <>
                     <ChessLines
-                      game={chessGame}
+                      gameMutable={gameMutable.current}
+                      gameState={gameState}
                       lines={bestLines}
                       boardOrientation={boardOrientation}
                     />
@@ -249,7 +263,8 @@ export default function Home() {
                 )}
 
                 <GameHistoryUI
-                  game={chessGame}
+                  gameMutable={gameMutable.current}
+                  gameState={gameState}
                   boardOrientation={boardOrientation}
                 />
               </div>
@@ -263,7 +278,8 @@ export default function Home() {
               {analysisEnabled && (
                 <>
                   <ChessLines
-                    game={chessGame}
+                    gameMutable={gameMutable.current}
+                    gameState={gameState}
                     lines={bestLines}
                     boardOrientation={boardOrientation}
                   />
@@ -273,7 +289,8 @@ export default function Home() {
               )}
 
               <GameHistoryUI
-                game={chessGame}
+                gameMutable={gameMutable.current}
+                gameState={gameState}
                 boardOrientation={boardOrientation}
               />
             </div>

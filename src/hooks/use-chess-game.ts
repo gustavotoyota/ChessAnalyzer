@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 
 import { ChessGame } from "@/core/chess-game";
-import { createProxyInstance } from "@/misc/proxy-instance";
+
+import useValueRef from "./use-value-ref";
 
 export default function useChessGame() {
-  const [game, setGame] = useState(() => new ChessGame());
+  const gameMutable = useValueRef(() => new ChessGame());
 
-  function _onUpdate() {
-    setGame(createProxyInstance(game));
-  }
+  const [gameState, setGameState] = useState(() => new ChessGame());
 
   useEffect(() => {
-    game.on("update", _onUpdate);
+    function _onUpdate() {
+      setGameState(new ChessGame(gameMutable.current));
+    }
+
+    gameMutable.current.on("update", _onUpdate);
 
     return () => {
-      game.off("update", _onUpdate);
+      gameMutable.current.off("update", _onUpdate);
     };
   }, []);
 
-  return game;
+  return { gameMutable, gameState };
 }

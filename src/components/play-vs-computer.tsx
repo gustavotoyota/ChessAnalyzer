@@ -9,7 +9,7 @@ import Button from "./button";
 import Dialog from "./dialog";
 
 export default function PlayVsComputer(props: {
-  game: ChessGame;
+  gameMutable: ChessGame;
   stockfishWrapper: StockfishWrapper;
   setAnalysisEnabled: (
     value: boolean | ((oldValue: boolean) => boolean)
@@ -33,12 +33,12 @@ export default function PlayVsComputer(props: {
   const [hideAnalysis, setHideAnalysis] = useState(true);
 
   useOnEvent(
-    () => props.game,
+    () => props.gameMutable,
     "move",
     async () => {
       if (
         !playVsComputerEnabledRef.current ||
-        props.game.turn === colorRef.current[0]
+        props.gameMutable.turn === colorRef.current[0]
       ) {
         return;
       }
@@ -50,7 +50,7 @@ export default function PlayVsComputer(props: {
 
       await props.stockfishWrapper.waitReady();
 
-      props.stockfishWrapper.goTime(props.game.fen, 2000);
+      props.stockfishWrapper.goTime(props.gameMutable.fen, 2000);
 
       const move = await props.stockfishWrapper.waitBestMove();
 
@@ -59,7 +59,7 @@ export default function PlayVsComputer(props: {
 
       await props.stockfishWrapper.waitReady();
 
-      props.game.executeMoves([move]);
+      props.gameMutable.executeMoves([move]);
     }
   );
 

@@ -35,18 +35,19 @@ function _getMoveColor(params: {
 }
 
 export default function GameHistoryUI(props: {
-  game: ChessGame;
+  gameMutable: ChessGame;
+  gameState: ChessGame;
   boardOrientation: BoardOrientation;
 }) {
   const [miniBoardX, setMiniBoardX] = useState(0);
   const [miniBoardY, setMiniBoardY] = useState(0);
   const [miniBoardVisible, setMiniBoardVisible] = useState(false);
-  const [miniBoardFen, setMiniBoardFen] = useState(props.game.startingFen);
+  const [miniBoardFen, setMiniBoardFen] = useState(props.gameState.startingFen);
 
   return (
     <div className="flex-1 h-0 overflow-auto">
-      {props.game.moveHistory
-        .concat(props.game.customMoveHistory)
+      {props.gameState.moveHistory
+        .concat(props.gameState.customMoveHistory)
         .reduce(
           (acc, value, index, array) => {
             if (index % 2 === 0) {
@@ -66,14 +67,14 @@ export default function GameHistoryUI(props: {
             <div
               className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${_getMoveColor(
                 {
-                  activeMoveIndex: props.game.finalMoveIndex,
+                  activeMoveIndex: props.gameState.finalMoveIndex,
                   renderMoveIndex: i * 2,
-                  numTotalMoves: props.game.finalMoveHistory.length,
-                  numCustomMoves: props.game.customMoveHistory.length,
+                  numTotalMoves: props.gameState.finalMoveHistory.length,
+                  numCustomMoves: props.gameState.customMoveHistory.length,
                 }
               )}`}
               onClick={() => {
-                props.game.goToMove(i * 2);
+                props.gameMutable.goToMove(i * 2);
 
                 setMiniBoardVisible(false);
               }}
@@ -82,7 +83,7 @@ export default function GameHistoryUI(props: {
                 setMiniBoardY(event.clientY);
               }}
               onPointerEnter={() => {
-                setMiniBoardFen(props.game.finalFenHistory[i * 2]);
+                setMiniBoardFen(props.gameMutable.finalFenHistory[i * 2]);
 
                 setMiniBoardVisible(true);
               }}
@@ -94,14 +95,14 @@ export default function GameHistoryUI(props: {
             <div
               className={`w-14 font-bold rounded-sm cursor-pointer p-1 ${_getMoveColor(
                 {
-                  activeMoveIndex: props.game.finalMoveIndex,
+                  activeMoveIndex: props.gameState.finalMoveIndex,
                   renderMoveIndex: i * 2 + 1,
-                  numTotalMoves: props.game.finalMoveHistory.length,
-                  numCustomMoves: props.game.customMoveHistory.length,
+                  numTotalMoves: props.gameState.finalMoveHistory.length,
+                  numCustomMoves: props.gameState.customMoveHistory.length,
                 }
               )}`}
               onClick={() => {
-                props.game.goToMove(i * 2 + 1);
+                props.gameMutable.goToMove(i * 2 + 1);
 
                 setMiniBoardVisible(false);
               }}
@@ -110,7 +111,7 @@ export default function GameHistoryUI(props: {
                 setMiniBoardY(event.clientY);
               }}
               onPointerEnter={() => {
-                setMiniBoardFen(props.game.finalFenHistory[i * 2 + 1]);
+                setMiniBoardFen(props.gameMutable.finalFenHistory[i * 2 + 1]);
 
                 setMiniBoardVisible(true);
               }}

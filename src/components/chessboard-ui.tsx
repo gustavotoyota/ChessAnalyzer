@@ -9,13 +9,14 @@ import { ChessGame } from "@/core/chess-game";
 import { checkPromotion } from "@/core/utils";
 
 export default function ChessboardUI(props: {
-  game: ChessGame;
+  gameMutable: ChessGame;
+  gameState: ChessGame;
   arrows?: Arrow[];
   boardOrientation?: BoardOrientation;
 }) {
   return (
     <Chessboard
-      position={props.game.fen}
+      position={props.gameState.fen}
       areArrowsAllowed={false}
       customArrows={props.arrows}
       customArrowColors={{
@@ -39,15 +40,17 @@ export default function ChessboardUI(props: {
           checkPromotion(
             sourceSquare,
             targetSquare,
-            props.game.get(sourceSquare).color +
-              props.game.get(sourceSquare).type.toUpperCase()
+            props.gameMutable.get(sourceSquare).color +
+              props.gameMutable.get(sourceSquare).type.toUpperCase()
           )
         ) {
-          return props.game.executeMoves([
+          return props.gameMutable.executeMoves([
             `${sourceSquare}${targetSquare}=${piece.at(-1)}`,
           ]);
         } else {
-          return props.game.executeMoves([`${sourceSquare}${targetSquare}`]);
+          return props.gameMutable.executeMoves([
+            `${sourceSquare}${targetSquare}`,
+          ]);
         }
       }}
       boardOrientation={props.boardOrientation}

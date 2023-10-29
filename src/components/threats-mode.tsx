@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { ChessGame } from "@/core/chess-game";
 import { StockfishWrapper } from "@/core/stockfish-wrapper";
 import { getFlippedFen } from "@/core/utils";
@@ -5,7 +7,7 @@ import { getFlippedFen } from "@/core/utils";
 import Button from "./button";
 
 export default function ThreatsMode(props: {
-  game: ChessGame;
+  gameMutable: ChessGame;
   stockfishWrapper: StockfishWrapper;
   threatsModeEnabled: boolean;
   setThreatsModeEnabled: (
@@ -17,18 +19,23 @@ export default function ThreatsMode(props: {
       const newThreatsModeEnabled = !oldThreatsModeEnabled;
 
       if (newThreatsModeEnabled) {
-        props.stockfishWrapper.goDepth(getFlippedFen(props.game.fen), 20);
+        props.stockfishWrapper.goDepth(
+          getFlippedFen(props.gameMutable.fen),
+          20
+        );
       } else {
-        props.stockfishWrapper.goDepth(props.game.fen, 20);
+        props.stockfishWrapper.goDepth(props.gameMutable.fen, 20);
       }
 
       return newThreatsModeEnabled;
     });
   }
 
-  props.game.on("update", () => {
-    props.setThreatsModeEnabled(false);
-  });
+  useEffect(() => {
+    props.gameMutable.on("update", () => {
+      props.setThreatsModeEnabled(false);
+    });
+  }, []);
 
   return (
     <>
