@@ -167,10 +167,11 @@ export class ChessGame {
     }
   }
   private _goForward(): boolean {
-    if (
-      this._customMoveHistory.length > 0 &&
-      this._customMoveIndex < this._customMoveHistory.length - 1
-    ) {
+    if (this._customMoveHistory.length > 0) {
+      if (this._customMoveIndex >= this._customMoveHistory.length - 1) {
+        return false;
+      }
+
       ++this._customMoveIndex;
 
       this._game.move(this._customMoveHistory[this._customMoveIndex]);
