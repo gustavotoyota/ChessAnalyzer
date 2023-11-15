@@ -69,10 +69,18 @@ export class ChessGame {
   }
 
   get finalMoveHistory() {
-    return this._moveHistory.concat(this._customMoveHistory);
+    return (
+      this._customMoveIndex < 0
+        ? this._moveHistory
+        : this._moveHistory.slice(0, this._moveIndex)
+    ).concat(this._customMoveHistory);
   }
   get finalFenHistory() {
-    return this._fenHistory.concat(this._customFenHistory);
+    return (
+      this._customMoveIndex < 0
+        ? this._fenHistory
+        : this._fenHistory.slice(0, this._moveIndex)
+    ).concat(this._customFenHistory);
   }
   get finalMoveIndex() {
     return this._moveIndex + this._customMoveIndex + 1;

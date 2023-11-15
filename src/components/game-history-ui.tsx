@@ -46,8 +46,7 @@ export default function GameHistoryUI(props: {
 
   return (
     <div className="flex-1 h-0 overflow-auto">
-      {props.gameState.moveHistory
-        .concat(props.gameState.customMoveHistory)
+      {props.gameState.finalMoveHistory
         .reduce(
           (acc, value, index, array) => {
             if (index % 2 === 0) {
